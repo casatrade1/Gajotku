@@ -637,6 +637,9 @@
     <!-- 상단 네비 -->
     <div class="top-nav" id="topNav">
         <div class="logo">🍻 레전드</div>
+        <div id="nextBirthday" style="font-size: 0.8rem; color: #666; text-align: center; flex: 1;">
+            <!-- 다음 생일 정보가 여기에 표시됩니다 -->
+        </div>
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
     </div>
 
@@ -684,28 +687,38 @@
 
         <!-- 친구들 섹션 -->
         <div id="friends" class="section">
-            <h2 class="section-title">👥 14명의 레전드들</h2>
+            <h2 class="section-title">👥 레전드 멤버들</h2>
             
+            <!-- 이번달 생일자 -->
+            <div class="card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white;">
+                <h3 style="margin-bottom: 15px; text-align: center;">🎂 이번달 생일자들</h3>
+                <div id="thisMonthBirthdays">
+                    <!-- 이번달 생일자들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 친구들 정보 -->
             <div class="card">
+                <h3 style="margin-bottom: 15px;">👥 전체 멤버</h3>
                 <div class="friends-list" id="friendsList">
                     <!-- 친구들이 여기에 표시됩니다 -->
                 </div>
             </div>
             
-            <!-- 친구별 사진 업로드 -->
+            <!-- 재미난 통계 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px;">📸 친구 사진 업로드</h3>
-                <div class="input-group">
-                    <label>친구 선택:</label>
-                    <select id="friendPhotoSelect">
-                        <option value="">친구를 선택하세요</option>
-                    </select>
+                <h3 style="margin-bottom: 15px;">📊 재미난 통계</h3>
+                <div id="funStats">
+                    <!-- 통계가 여기에 표시됩니다 -->
                 </div>
-                <button class="btn btn-secondary" onclick="openFriendPhotoModal()">📸 친구 사진 추가</button>
-                
-                <div id="friendPhotoGallery" style="margin-top: 20px;">
-                    <!-- 친구별 사진들이 여기에 표시됩니다 -->
-                </div>
+            </div>
+            
+            <!-- 랜덤 친구 뽑기 -->
+            <div class="card" style="text-align: center;">
+                <h3 style="margin-bottom: 15px;">🎲 오늘의 픽! 랜덤 친구</h3>
+                <div id="randomFriend" style="font-size: 3rem; margin: 20px 0;">🎯</div>
+                <div id="randomFriendName" style="font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">버튼을 눌러보세요!</div>
+                <button class="btn btn-primary" onclick="pickRandomFriend()">🎲 친구 뽑기!</button>
             </div>
         </div>
 
@@ -724,6 +737,44 @@
             </div>
         </div>
 
+        <!-- 랜덤 게임 섹션 -->
+        <div id="random" class="section">
+            <h2 class="section-title">🎲 랜덤 게임존</h2>
+            
+            <!-- 랜덤 추억 -->
+            <div class="card">
+                <div class="random-box">
+                    <h3 style="margin-bottom: 1rem;">🎰 랜덤 추억 머신</h3>
+                    <div class="random-photo" id="randomPhoto">🎲</div>
+                    <p id="randomDescription" style="font-size: 1.2rem; margin-bottom: 2rem;">버튼을 눌러서 추억을 뽑아보세요!</p>
+                    <button class="btn btn-primary" onclick="getRandomMemory()">🎲 추억 뽑기!</button>
+                </div>
+            </div>
+            
+            <!-- 오늘의 운세 -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px; text-align: center;">🔮 오늘의 친구 운세</h3>
+                <div class="input-group">
+                    <label>친구 선택:</label>
+                    <select id="fortuneSelect">
+                        <option value="">친구를 선택하세요</option>
+                    </select>
+                </div>
+                <div id="fortuneResult" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 15px; margin-top: 15px; display: none;">
+                    <!-- 운세 결과가 여기에 표시됩니다 -->
+                </div>
+                <button class="btn btn-secondary" onclick="getFortune()">🔮 운세 보기</button>
+            </div>
+            
+            <!-- 밸런스 게임 -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px; text-align: center;">⚖️ 밸런스 게임</h3>
+                <div id="balanceGame" style="text-align: center;">
+                    <button class="btn btn-primary" onclick="startBalanceGame()">🎯 새로운 밸런스 게임 시작!</button>
+                </div>
+            </div>
+        </div>
+        
         <!-- 명언집 섹션 -->
         <div id="quotes" class="section">
             <h2 class="section-title">💬 레전드 명언집</h2>
@@ -744,16 +795,20 @@
                 <span>술친구</span>
             </div>
             <div class="nav-item" onclick="showSection('friends')">
-                <span class="icon">👥</span>
+                <span class="icon">🎂</span>
                 <span>친구들</span>
             </div>
             <div class="nav-item" onclick="showSection('gallery')">
                 <span class="icon">📸</span>
                 <span>갤러리</span>
             </div>
+            <div class="nav-item" onclick="showSection('random')">
+                <span class="icon">🎲</span>
+                <span>랜덤</span>
+            </div>
             <div class="nav-item" onclick="showSection('quotes')">
                 <span class="icon">💬</span>
-                <span>명언집</span>
+                <span>명언</span>
             </div>
         </div>
     </div>
@@ -938,6 +993,20 @@
             loadFriendPhotos();
             loadQuotes();
             updateRanking();
+            updateThisMonthBirthdays();
+            updateFunStats();
+            
+            // 운세 셀렉트 박스 업데이트
+            updateSelects();
+            
+            // 오늘 날짜 설정
+            document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
+        });initializeFriends();
+            loadDrinkLogs();
+            loadVoteGallery();
+            loadFriendPhotos();
+            loadQuotes();
+            updateRanking();
             
             // 오늘 날짜 설정
             document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
@@ -979,11 +1048,8 @@
             
             // 특정 섹션별 추가 로직
             if (sectionName === 'friends') {
-                // 친구 선택 박스에 이벤트 리스너 추가
-                const select = document.getElementById('friendPhotoSelect');
-                if (select) {
-                    select.onchange = loadSelectedFriendPhotos;
-                }
+                updateThisMonthBirthdays();
+                updateFunStats();
             }
         }
 
@@ -991,20 +1057,21 @@
         function initializeFriends() {
             if (friendsData.length === 0) {
                 const realFriends = [
-                    { id: 1, nickname: 'YSN JOKER', emoji: '🃏', realName: '강정현' },
-                    { id: 2, nickname: '복쿠레', emoji: '🎲', realName: '복지현' },
-                    { id: 3, nickname: '각해킹(숙주)', emoji: '🦠', realName: '곽도윤' },
-                    { id: 4, nickname: '노소맨', emoji: '🎯', realName: '심재현' },
-                    { id: 5, nickname: '쾌걸근육맨', emoji: '💪', realName: '양규현' },
-                    { id: 6, nickname: '26년 4월', emoji: '📅', realName: '이학준' },
-                    { id: 7, nickname: '희준아 너만 믿는다', emoji: '🙏', realName: '한희준' },
-                    { id: 8, nickname: '누구세요', emoji: '❓', realName: '전상혁' },
-                    { id: 9, nickname: '곽애인', emoji: '💕', realName: '도윤' },
-                    { id: 10, nickname: '나가주세요', emoji: '🚪', realName: '연수' },
-                    { id: 11, nickname: '철구', emoji: '🔩', realName: '이서현' },
-                    { id: 12, nickname: '황대표', emoji: '👔', realName: '황승하' },
-                    { id: 13, nickname: '미나리', emoji: '🌿', realName: '양정후' },
-                    { id: 14, nickname: '강순건', emoji: '🏗️', realName: '강순건' }
+                    { id: 1, nickname: 'YSN JOKER', emoji: '🃏', realName: '강정현', birthday: '0807' },
+                    { id: 2, nickname: '복쿠레', emoji: '🎲', realName: '복지현', birthday: '0115' },
+                    { id: 3, nickname: '각해킹(숙주)', emoji: '🦠', realName: '곽도윤', birthday: '0731' },
+                    { id: 4, nickname: '노소맨', emoji: '🎯', realName: '심재현', birthday: '1005' },
+                    { id: 5, nickname: '쾌걸근육맨', emoji: '💪', realName: '양규현', birthday: '0419' },
+                    { id: 6, nickname: '26년 4월', emoji: '📅', realName: '이학준', birthday: '0222' },
+                    { id: 7, nickname: '희준아 너만 믿는다', emoji: '🙏', realName: '한희준', birthday: '1221' },
+                    { id: 8, nickname: '누구세요', emoji: '❓', realName: '전상혁', birthday: '0818' },
+                    { id: 9, nickname: '미나리', emoji: '🌿', realName: '양정후', birthday: '1018' },
+                    { id: 10, nickname: '황대표', emoji: '👔', realName: '황승하', birthday: '0711' },
+                    { id: 11, nickname: '철구', emoji: '🔩', realName: '이서현', birthday: '0124' },
+                    { id: 12, nickname: '강순건', emoji: '🏗️', realName: '강순건', birthday: '0418' },
+                    { id: 13, nickname: '윤희태', emoji: '🌟', realName: '윤희태', birthday: '0115' },
+                    { id: 14, nickname: '박주호', emoji: '⚽', realName: '박주호', birthday: '0601' },
+                    { id: 15, nickname: '신민호', emoji: '🎭', realName: '신민호', birthday: '0303' }
                 ];
                 
                 friendsData = realFriends;
@@ -1014,6 +1081,7 @@
             loadFriends();
             generateFriendSelector();
             updateSelects();
+            updateNextBirthday();
         }
 
         // 친구 목록 로드
@@ -1026,16 +1094,215 @@
                 friendElement.className = 'friend-item';
                 friendElement.onclick = () => showFriendDetails(friend.id);
                 
-                const drinkCount = getDrinkCountForFriend(friend.id);
+                // 생일까지 남은 일수 계산
+                const daysUntilBirthday = getDaysUntilBirthday(friend.birthday);
                 
                 friendElement.innerHTML = `
                     <span class="friend-emoji">${friend.emoji}</span>
                     <div class="friend-name">${friend.nickname}</div>
-                    <div class="friend-status">이번달 ${drinkCount}회</div>
+                    <div class="friend-status">생일까지 ${daysUntilBirthday}일</div>
                 `;
                 
                 container.appendChild(friendElement);
             });
+        }
+
+        // 생일까지 남은 일수 계산
+        function getDaysUntilBirthday(birthday) {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const month = parseInt(birthday.substring(0, 2)) - 1; // 0-based month
+            const day = parseInt(birthday.substring(2, 4));
+            
+            let birthdayThisYear = new Date(currentYear, month, day);
+            
+            // 올해 생일이 지났으면 내년 생일로 계산
+            if (birthdayThisYear < today) {
+                birthdayThisYear = new Date(currentYear + 1, month, day);
+            }
+            
+            const diffTime = birthdayThisYear - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays;
+        }
+
+        // 다음 생일 업데이트
+        function updateNextBirthday() {
+            const nextBirthdayContainer = document.getElementById('nextBirthday');
+            
+            // 모든 친구들의 생일까지 남은 일수 계산
+            const birthdayList = friendsData.map(friend => ({
+                ...friend,
+                daysUntil: getDaysUntilBirthday(friend.birthday)
+            })).sort((a, b) => a.daysUntil - b.daysUntil);
+            
+            const nextBirthday = birthdayList[0];
+            
+            if (nextBirthday.daysUntil === 0) {
+                nextBirthdayContainer.innerHTML = `🎉 오늘은 ${nextBirthday.nickname}의 생일! 🎂`;
+                nextBirthdayContainer.style.color = '#ff6b6b';
+                nextBirthdayContainer.style.fontWeight = '600';
+            } else {
+                nextBirthdayContainer.innerHTML = `🎂 다음 생일: ${nextBirthday.nickname} (${nextBirthday.daysUntil}일 후)`;
+            }
+        }
+
+        // 이번달 생일자 업데이트
+        function updateThisMonthBirthdays() {
+            const container = document.getElementById('thisMonthBirthdays');
+            const currentMonth = new Date().getMonth() + 1; // 1-based month
+            
+            const thisMonthBirthdays = friendsData.filter(friend => {
+                const friendMonth = parseInt(friend.birthday.substring(0, 2));
+                return friendMonth === currentMonth;
+            });
+            
+            if (thisMonthBirthdays.length === 0) {
+                container.innerHTML = '<p style="text-align: center; margin: 0;">이번달에는 생일자가 없어요! 🎈</p>';
+            } else {
+                container.innerHTML = thisMonthBirthdays.map(friend => {
+                    const day = parseInt(friend.birthday.substring(2, 4));
+                    const daysUntil = getDaysUntilBirthday(friend.birthday);
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                            <span>${friend.emoji} ${friend.nickname}</span>
+                            <span>${currentMonth}월 ${day}일 ${daysUntil === 0 ? '(오늘!)' : `(${daysUntil}일 후)`}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // 재미난 통계 업데이트
+        function updateFunStats() {
+            const container = document.getElementById('funStats');
+            
+            const stats = [
+                `🍻 총 술자리 횟수: ${drinkLogs.length}회`,
+                `📸 업로드된 사진: ${votePhotos.length + friendPhotos.length}장`,
+                `💬 명언 모음: ${quotes.length}개`,
+                `🎂 평균 나이: ${calculateAverageAge()}세`,
+                `🏆 최다 술친구: ${getMostDrinkingFriend()}`
+            ];
+            
+            container.innerHTML = stats.map(stat => 
+                `<div style="padding: 8px 0; border-bottom: 1px solid #eee;">${stat}</div>`
+            ).join('');
+        }
+
+        // 평균 나이 계산 (대략적으로)
+        function calculateAverageAge() {
+            // 생년을 대략적으로 추정 (01년생 = 2001년생으로 가정)
+            const ages = friendsData.map(friend => {
+                const birthYear = parseInt(friend.birthday.substring(0, 2));
+                const year = birthYear < 50 ? 2000 + birthYear : 1900 + birthYear;
+                return new Date().getFullYear() - year;
+            });
+            
+            return Math.round(ages.reduce((sum, age) => sum + age, 0) / ages.length);
+        }
+
+        // 최다 술친구 찾기
+        function getMostDrinkingFriend() {
+            if (drinkLogs.length === 0) return "아직 없음";
+            
+            const drinkCounts = {};
+            drinkLogs.forEach(log => {
+                log.participants.forEach(friendId => {
+                    drinkCounts[friendId] = (drinkCounts[friendId] || 0) + 1;
+                });
+            });
+            
+            const topDrinkerId = Object.keys(drinkCounts).reduce((a, b) => 
+                drinkCounts[a] > drinkCounts[b] ? a : b
+            );
+            
+            const topDrinker = friendsData.find(f => f.id == topDrinkerId);
+            return topDrinker ? `${topDrinker.nickname} (${drinkCounts[topDrinkerId]}회)` : "아직 없음";
+        }
+
+        // 랜덤 친구 뽑기
+        function pickRandomFriend() {
+            const randomFriend = friendsData[Math.floor(Math.random() * friendsData.length)];
+            document.getElementById('randomFriend').textContent = randomFriend.emoji;
+            document.getElementById('randomFriendName').textContent = `오늘의 픽! ${randomFriend.nickname}`;
+        }
+
+        // 운세 보기
+        function getFortune() {
+            const selectedFriendId = document.getElementById('fortuneSelect').value;
+            if (!selectedFriendId) {
+                alert('친구를 선택해주세요!');
+                return;
+            }
+            
+            const friend = friendsData.find(f => f.id == selectedFriendId);
+            const fortunes = [
+                '오늘은 술자리에서 대박 터질 예정! 🍻',
+                '친구들과의 만남에서 행운이 찾아올 거예요! ✨',
+                '사진 찍을 때 각도 대박 나올 날! 📸',
+                '오늘은 집에서 쉬는 게 좋겠어요... 🏠',
+                '새로운 명언이 탄생할 예감! 💬',
+                '치킨이 생각나는 날이네요! 🍗',
+                '친구들에게 인기 폭발할 예정! 🔥',
+                '재밌는 일이 일어날 것 같아요! 🎉',
+                '오늘은 좀 조용히 지내세요... 😅',
+                '럭키한 하루가 될 거예요! 🍀'
+            ];
+            
+            const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+            const fortuneContainer = document.getElementById('fortuneResult');
+            
+            fortuneContainer.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 10px;">${friend.emoji}</div>
+                <div style="font-weight: 600; margin-bottom: 10px;">${friend.nickname}의 오늘 운세</div>
+                <div style="font-size: 1.1rem; color: #666;">${randomFortune}</div>
+            `;
+            fortuneContainer.style.display = 'block';
+        }
+
+        // 밸런스 게임
+        function startBalanceGame() {
+            const games = [
+                ['🍺 맥주 vs 🍶 소주', '맥주', '소주'],
+                ['🏠 집 vs 🎉 클럽', '집', '클럽'],
+                ['🍗 치킨 vs 🍕 피자', '치킨', '피자'],
+                ['😴 일찍 자기 vs 🌙 올나이트', '일찍 자기', '올나이트'],
+                ['💰 돈 vs ❤️ 사랑', '돈', '사랑'],
+                ['☀️ 여름 vs ❄️ 겨울', '여름', '겨울'],
+                ['🎮 게임 vs 📺 영화', '게임', '영화'],
+                ['🚗 드라이브 vs 🚶 산책', '드라이브', '산책']
+            ];
+            
+            const randomGame = games[Math.floor(Math.random() * games.length)];
+            const gameContainer = document.getElementById('balanceGame');
+            
+            gameContainer.innerHTML = `
+                <h4 style="margin-bottom: 20px; color: #333;">${randomGame[0]}</h4>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="selectBalance('${randomGame[1]}')" style="flex: 1; max-width: 120px;">${randomGame[1]}</button>
+                    <button class="btn btn-secondary" onclick="selectBalance('${randomGame[2]}')" style="flex: 1; max-width: 120px;">${randomGame[2]}</button>
+                </div>
+                <div id="balanceResult" style="margin-top: 15px; font-size: 0.9rem; color: #666;"></div>
+            `;
+        }
+
+        // 밸런스 게임 선택
+        function selectBalance(choice) {
+            const messages = [
+                `${choice} 선택! 역시 센스 있네요! 👍`,
+                `${choice}를 고르다니... 예상했어요! 😄`,
+                `${choice} 파이터시군요! 🔥`,
+                `${choice}... 그럴 줄 알았어요! 😏`
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            document.getElementById('balanceResult').textContent = randomMessage;
+            
+            setTimeout(() => {
+                document.getElementById('balanceGame').innerHTML = '<button class="btn btn-primary" onclick="startBalanceGame()">🎯 새로운 밸런스 게임 시작!</button>';
+            }, 3000);
         }
 
         // 친구별 술친구 횟수 계산
@@ -1082,7 +1349,7 @@
 
         // 셀렉트 박스 업데이트
         function updateSelects() {
-            const selects = ['quoteSpeaker', 'friendPhotoSelect', 'selectedFriendForPhoto'];
+            const selects = ['quoteSpeaker', 'friendPhotoSelect', 'selectedFriendForPhoto', 'fortuneSelect'];
             
             selects.forEach(selectId => {
                 const select = document.getElementById(selectId);
@@ -1188,9 +1455,11 @@
                 photoElement.className = 'drink-log';
                 photoElement.style.background = index === 0 ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 photoElement.style.color = 'white';
+                photoElement.style.position = 'relative';
                 
                 photoElement.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; z-index: 10;" onclick="deleteVotePhoto(${photo.id})" title="삭제">✕</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 45px;">
                         <h4 style="margin: 0;">${index + 1}위. ${photo.title}</h4>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-weight: 600;">❤️ ${photo.votes}</span>
@@ -1205,6 +1474,15 @@
                 
                 container.appendChild(photoElement);
             });
+        }
+
+        // 투표 사진 삭제
+        function deleteVotePhoto(photoId) {
+            if (confirm('정말 이 투표 사진을 삭제하시겠어요?')) {
+                votePhotos = votePhotos.filter(photo => photo.id !== photoId);
+                saveData();
+                loadVoteGallery();
+            }
         }
 
         // 사진 투표
@@ -1309,9 +1587,9 @@
                 return;
             }
             
-            const friendFacePtotos = friendPhotos.filter(photo => photo.friendId == selectedFriend);
+            const friendFacePhotos = friendPhotos.filter(photo => photo.friendId == selectedFriend);
             
-            if (friendFacePtotos.length === 0) {
+            if (friendFacePhotos.length === 0) {
                 const friend = friendsData.find(f => f.id == selectedFriend);
                 container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">${friend?.nickname}의 사진이 없어요!</p>`;
                 return;
@@ -1320,16 +1598,29 @@
             const gridContainer = document.createElement('div');
             gridContainer.className = 'photo-grid';
             
-            friendFacePtotos.forEach(photo => {
+            friendFacePhotos.forEach(photo => {
                 const photoElement = document.createElement('div');
                 photoElement.className = 'photo-item';
-                photoElement.onclick = () => viewPhoto(photo.photo, photo.title);
+                photoElement.style.position = 'relative';
                 
-                photoElement.innerHTML = `<img src="${photo.photo}" alt="${photo.title}">`;
+                photoElement.innerHTML = `
+                    <img src="${photo.photo}" alt="${photo.title}" onclick="viewPhoto('${photo.photo}', '${photo.title}')">
+                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem;" onclick="deleteFriendPhoto(${photo.id})" title="삭제">✕</div>
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 0.7rem; text-align: center;">${photo.title}</div>
+                `;
                 gridContainer.appendChild(photoElement);
             });
             
             container.appendChild(gridContainer);
+        }
+
+        // 친구 사진 삭제
+        function deleteFriendPhoto(photoId) {
+            if (confirm('정말 이 사진을 삭제하시겠어요?')) {
+                friendPhotos = friendPhotos.filter(photo => photo.id !== photoId);
+                saveData();
+                loadFriendPhotos();
+            }
         }
 
         // 친구 선택시 사진 로드
@@ -1422,6 +1713,8 @@
                 loadDrinkLogs();
                 updateRanking();
                 loadFriends();
+                updateThisMonthBirthdays();
+                updateFunStats();
                 closeDrinkModal();
             }
         }
@@ -1439,6 +1732,7 @@
             drinkLogs.slice(0, 10).forEach(log => {
                 const logElement = document.createElement('div');
                 logElement.className = 'drink-log';
+                logElement.style.position = 'relative';
                 
                 const participants = log.participants.map(id => {
                     const friend = friendsData.find(f => f.id === id);
@@ -1446,6 +1740,7 @@
                 });
                 
                 logElement.innerHTML = `
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; z-index: 10;" onclick="deleteDrinkLog(${log.id})" title="삭제">✕</div>
                     <div class="drink-date">${new Date(log.date).toLocaleDateString('ko-KR', { 
                         year: 'numeric', 
                         month: 'long', 
@@ -1455,12 +1750,23 @@
                     <div class="drink-participants">
                         ${participants.map(name => `<span class="participant-tag">${name}</span>`).join('')}
                     </div>
-                    ${log.memo ? `<div style="margin-top: 8px; font-size: 0.9rem;">${log.memo}</div>` : ''}
+                    ${log.memo ? `<div style="margin-top: 8px; font-size: 0.9rem; padding-right: 30px;">${log.memo}</div>` : ''}
                     ${log.photo ? `<img src="${log.photo}" class="drink-photo" onclick="viewPhoto('${log.photo}')">` : ''}
                 `;
                 
                 container.appendChild(logElement);
             });
+        }
+
+        // 술친구 로그 삭제
+        function deleteDrinkLog(logId) {
+            if (confirm('정말 이 술친구 기록을 삭제하시겠어요?')) {
+                drinkLogs = drinkLogs.filter(log => log.id !== logId);
+                saveData();
+                loadDrinkLogs();
+                updateRanking();
+                loadFriends();
+            }
         }
 
         // 랭킹 업데이트
@@ -1677,9 +1983,11 @@
                 quoteElement.className = 'drink-log';
                 quoteElement.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
                 quoteElement.style.color = 'white';
+                quoteElement.style.position = 'relative';
                 
                 quoteElement.innerHTML = `
-                    <div style="font-style: italic; font-size: 1.1rem; margin-bottom: 10px;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; z-index: 10;" onclick="deleteQuote(${quote.id})" title="삭제">✕</div>
+                    <div style="font-style: italic; font-size: 1.1rem; margin-bottom: 10px; padding-right: 35px;">
                         "${quote.text}"
                     </div>
                     <div style="text-align: right; font-weight: 600;">
@@ -1692,6 +2000,15 @@
                 
                 container.appendChild(quoteElement);
             });
+        }
+
+        // 명언 삭제
+        function deleteQuote(quoteId) {
+            if (confirm('정말 이 명언을 삭제하시겠어요?')) {
+                quotes = quotes.filter(quote => quote.id !== quoteId);
+                saveData();
+                loadQuotes();
+            }
         }
 
         // 친구 상세 정보 (추후 구현)
