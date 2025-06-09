@@ -70,6 +70,13 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .enter-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
         }
 
         .enter-btn:active {
@@ -636,7 +643,7 @@
 
     <!-- 상단 네비 -->
     <div class="top-nav" id="topNav">
-        <div class="logo">🍻 레전드</div>
+        <div class="logo">🔥 개씨부랄</div>
         <div id="nextBirthday" style="font-size: 0.8rem; color: #666; text-align: center; flex: 1;">
             <!-- 다음 생일 정보가 여기에 표시됩니다 -->
         </div>
@@ -648,26 +655,26 @@
         
         <!-- 술친구 섹션 -->
         <div id="drinking" class="section active">
-            <h2 class="section-title">🍻 술친구 로그</h2>
+            <h2 class="section-title">🍻 개씨부랄 술친구 기록</h2>
             
             <!-- 이번달 통계 -->
             <div class="monthly-stats">
-                <h3 class="stats-title">🏆 이번달 술친구 순위</h3>
+                <h3 class="stats-title">🏆 이번달 개씨부랄 술킹 순위</h3>
                 <div class="stats-grid">
                     <div class="stat-item">
                         <div class="stat-number" id="myDrinkCount">0</div>
-                        <div class="stat-label">내 음주 횟수</div>
+                        <div class="stat-label">내 개씨부랄 횟수</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number" id="topDrinkerCount">0</div>
-                        <div class="stat-label">음주킹 기록</div>
+                        <div class="stat-label">개씨부랄킹 기록</div>
                     </div>
                 </div>
             </div>
 
             <!-- 랭킹 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px; font-size: 1.1rem;">🥇 이번달 음주킹 랭킹</h3>
+                <h3 style="margin-bottom: 15px; font-size: 1.1rem;">🥇 이번달 개씨부랄 술킹 랭킹</h3>
                 <div class="ranking-list" id="drinkingRanking">
                     <!-- 랭킹이 여기에 표시됩니다 -->
                 </div>
@@ -676,7 +683,7 @@
             <!-- 최근 술친구 로그 -->
             <div class="card">
                 <div class="drink-header">
-                    <h3 class="drink-title">📝 최근 술친구 기록</h3>
+                    <h3 class="drink-title">📝 개씨부랄 술자리 기록</h3>
                     <button class="add-drink-btn" onclick="openDrinkModal()">+ 추가</button>
                 </div>
                 <div id="drinkLogs">
@@ -687,7 +694,7 @@
 
         <!-- 친구들 섹션 -->
         <div id="friends" class="section">
-            <h2 class="section-title">👥 레전드 멤버들</h2>
+            <h2 class="section-title">👥 개씨부랄 가족들</h2>
             
             <!-- 이번달 생일자 -->
             <div class="card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white;">
@@ -707,7 +714,7 @@
             
             <!-- 재미난 통계 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px;">📊 재미난 통계</h3>
+                <h3 style="margin-bottom: 15px;">📊 개씨부랄 통계</h3>
                 <div id="funStats">
                     <!-- 통계가 여기에 표시됩니다 -->
                 </div>
@@ -715,10 +722,10 @@
             
             <!-- 랜덤 친구 뽑기 -->
             <div class="card" style="text-align: center;">
-                <h3 style="margin-bottom: 15px;">🎲 오늘의 픽! 랜덤 친구</h3>
+                <h3 style="margin-bottom: 15px;">🎲 오늘 누가 술값 낼까? ㅋㅋ</h3>
                 <div id="randomFriend" style="font-size: 3rem; margin: 20px 0;">🎯</div>
-                <div id="randomFriendName" style="font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">버튼을 눌러보세요!</div>
-                <button class="btn btn-primary" onclick="pickRandomFriend()">🎲 친구 뽑기!</button>
+                <div id="randomFriendName" style="font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">술값 낼 호구를 뽑아보세요!</div>
+                <button class="btn btn-primary" onclick="pickRandomFriend()">🎲 호구 뽑기!</button>
             </div>
         </div>
 
@@ -739,21 +746,21 @@
 
         <!-- 랜덤 게임 섹션 -->
         <div id="random" class="section">
-            <h2 class="section-title">🎲 랜덤 게임존</h2>
+            <h2 class="section-title">🎲 개씨부랄 게임존</h2>
             
             <!-- 랜덤 추억 -->
             <div class="card">
                 <div class="random-box">
-                    <h3 style="margin-bottom: 1rem;">🎰 랜덤 추억 머신</h3>
+                    <h3 style="margin-bottom: 1rem;">🎰 개씨부랄 추억 뽑기</h3>
                     <div class="random-photo" id="randomPhoto">🎲</div>
-                    <p id="randomDescription" style="font-size: 1.2rem; margin-bottom: 2rem;">버튼을 눌러서 추억을 뽑아보세요!</p>
+                    <p id="randomDescription" style="font-size: 1.2rem; margin-bottom: 2rem;">개씨부랄 추억을 뽑아보세요!</p>
                     <button class="btn btn-primary" onclick="getRandomMemory()">🎲 추억 뽑기!</button>
                 </div>
             </div>
             
             <!-- 오늘의 운세 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px; text-align: center;">🔮 오늘의 친구 운세</h3>
+                <h3 style="margin-bottom: 15px; text-align: center;">🔮 오늘의 개씨부랄 운세</h3>
                 <div class="input-group">
                     <label>친구 선택:</label>
                     <select id="fortuneSelect">
@@ -768,22 +775,22 @@
             
             <!-- 밸런스 게임 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px; text-align: center;">⚖️ 밸런스 게임</h3>
+                <h3 style="margin-bottom: 15px; text-align: center;">⚖️ 개씨부랄 밸런스 게임</h3>
                 <div id="balanceGame" style="text-align: center;">
-                    <button class="btn btn-primary" onclick="startBalanceGame()">🎯 새로운 밸런스 게임 시작!</button>
+                    <button class="btn btn-primary" onclick="startBalanceGame()">🎯 개씨부랄 밸런스 게임 시작!</button>
                 </div>
             </div>
         </div>
         
         <!-- 명언집 섹션 -->
         <div id="quotes" class="section">
-            <h2 class="section-title">💬 레전드 명언집</h2>
+            <h2 class="section-title">💬 개씨부랄 명언집</h2>
             
             <div class="card" id="quotesList">
                 <!-- 명언들이 여기에 표시됩니다 -->
             </div>
             
-            <button class="btn btn-primary" onclick="openQuoteModal()">💬 명언 추가</button>
+            <button class="btn btn-primary" onclick="openQuoteModal()">💬 개씨부랄 명언 추가</button>
         </div>
     </div>
 
@@ -792,19 +799,19 @@
         <div class="nav-items">
             <div class="nav-item active" onclick="showSection('drinking')">
                 <span class="icon">🍻</span>
-                <span>술친구</span>
+                <span>개씨부랄</span>
             </div>
             <div class="nav-item" onclick="showSection('friends')">
                 <span class="icon">🎂</span>
-                <span>친구들</span>
+                <span>가족들</span>
             </div>
             <div class="nav-item" onclick="showSection('gallery')">
                 <span class="icon">📸</span>
-                <span>갤러리</span>
+                <span>투표</span>
             </div>
             <div class="nav-item" onclick="showSection('random')">
                 <span class="icon">🎲</span>
-                <span>랜덤</span>
+                <span>게임</span>
             </div>
             <div class="nav-item" onclick="showSection('quotes')">
                 <span class="icon">💬</span>
@@ -978,6 +985,7 @@
                 votePhotos = JSON.parse(localStorage.getItem('votePhotos')) || [];
                 friendPhotos = JSON.parse(localStorage.getItem('friendPhotos')) || [];
                 quotes = JSON.parse(localStorage.getItem('quotes')) || [];
+                console.log('데이터 로드 완료:', {friendsData, drinkLogs, votePhotos, quotes});
             } catch(e) {
                 // localStorage 사용 불가시 기본값 유지
                 console.log('localStorage 사용 불가 - 기본 데이터로 시작합니다');
@@ -1014,6 +1022,7 @@
 
         // 사이트 진입
         function enterSite() {
+            console.log('enterSite 함수 호출됨');
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('mainContainer').classList.add('active');
             document.getElementById('topNav').classList.add('active');
@@ -1226,7 +1235,7 @@
         function pickRandomFriend() {
             const randomFriend = friendsData[Math.floor(Math.random() * friendsData.length)];
             document.getElementById('randomFriend').textContent = randomFriend.emoji;
-            document.getElementById('randomFriendName').textContent = `오늘의 픽! ${randomFriend.nickname}`;
+            document.getElementById('randomFriendName').textContent = `오늘 술값 낼 호구: ${randomFriend.nickname} ㅋㅋㅋ`;
         }
 
         // 운세 보기
@@ -1239,16 +1248,18 @@
             
             const friend = friendsData.find(f => f.id == selectedFriendId);
             const fortunes = [
-                '오늘은 술자리에서 대박 터질 예정! 🍻',
-                '친구들과의 만남에서 행운이 찾아올 거예요! ✨',
-                '사진 찍을 때 각도 대박 나올 날! 📸',
-                '오늘은 집에서 쉬는 게 좋겠어요... 🏠',
-                '새로운 명언이 탄생할 예감! 💬',
-                '치킨이 생각나는 날이네요! 🍗',
-                '친구들에게 인기 폭발할 예정! 🔥',
-                '재밌는 일이 일어날 것 같아요! 🎉',
-                '오늘은 좀 조용히 지내세요... 😅',
-                '럭키한 하루가 될 거예요! 🍀'
+                '오늘은 술자리에서 개씨부랄 터질 예정! 🍻',
+                '친구들한테 개놀림 당할 각오 하세요 ㅋㅋ 😂',
+                '사진 찍을 때 개멍청한 표정 나올 예정 📸',
+                '오늘은 집에서 개처럼 자는 게 좋겠어요... 🏠',
+                '개씨부랄 명언이 탄생할 예감! 💬',
+                '치킨 먹고 개배부를 날 ㅋㅋ 🍗',
+                '친구들에게 개인기 보여줄 예정! 🔥',
+                '개재밌는 일이 일어날 것 같아요! 🎉',
+                '오늘은 개조용히 지내세요... 😅',
+                '개럭키한 하루가 될 거예요! 🍀',
+                '개망한 하루가 될 수도... 😱',
+                '술 마시고 개취할 예정 🤮'
             ];
             
             const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
@@ -1256,7 +1267,7 @@
             
             fortuneContainer.innerHTML = `
                 <div style="font-size: 2rem; margin-bottom: 10px;">${friend.emoji}</div>
-                <div style="font-weight: 600; margin-bottom: 10px;">${friend.nickname}의 오늘 운세</div>
+                <div style="font-weight: 600; margin-bottom: 10px;">${friend.nickname}의 개씨부랄 운세</div>
                 <div style="font-size: 1.1rem; color: #666;">${randomFortune}</div>
             `;
             fortuneContainer.style.display = 'block';
@@ -1266,8 +1277,48 @@
         function startBalanceGame() {
             const games = [
                 ['🍺 맥주 vs 🍶 소주', '맥주', '소주'],
-                ['🏠 집 vs 🎉 클럽', '집', '클럽'],
+                ['🏠 집 vs 🎉 클럽', '집콕', '클럽'],
                 ['🍗 치킨 vs 🍕 피자', '치킨', '피자'],
+                ['😴 일찍 자기 vs 🌙 올나이트', '일찍 자기', '올나이트'],
+                ['💰 돈 vs ❤️ 사랑', '돈', '사랑'],
+                ['☀️ 여름 vs ❄️ 겨울', '여름', '겨울'],
+                ['🎮 게임 vs 📺 영화', '게임', '영화'],
+                ['🚗 드라이브 vs 🚶 산책', '드라이브', '산책'],
+                ['🤮 토하면서 마시기 vs 😴 술 안마시기', '토하면서 마시기', '술 안마시기'],
+                ['💩 똥 vs 🤮 토', '똥', '토'],
+                ['🔥 개씨부랄 vs 😇 점잖게', '개씨부랄', '점잖게']
+            ];
+            
+            const randomGame = games[Math.floor(Math.random() * games.length)];
+            const gameContainer = document.getElementById('balanceGame');
+            
+            gameContainer.innerHTML = `
+                <h4 style="margin-bottom: 20px; color: #333;">${randomGame[0]}</h4>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="selectBalance('${randomGame[1]}')" style="flex: 1; max-width: 120px;">${randomGame[1]}</button>
+                    <button class="btn btn-secondary" onclick="selectBalance('${randomGame[2]}')" style="flex: 1; max-width: 120px;">${randomGame[2]}</button>
+                </div>
+                <div id="balanceResult" style="margin-top: 15px; font-size: 0.9rem; color: #666;"></div>
+            `;
+        }
+
+        // 밸런스 게임 선택
+        function selectBalance(choice) {
+            const messages = [
+                `${choice} 선택! 개씨부랄 센스 있네요! 👍`,
+                `${choice}를 고르다니... 개예상했어요! 😄`,
+                `${choice} 파이터시군요! 개씨부랄! 🔥`,
+                `${choice}... 개그럴 줄 알았어요! 😏`,
+                `개씨부랄 ${choice} 고르는 센스 ㅋㅋ 🤣`
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            document.getElementById('balanceResult').textContent = randomMessage;
+            
+            setTimeout(() => {
+                document.getElementById('balanceGame').innerHTML = '<button class="btn btn-primary" onclick="startBalanceGame()">🎯 개씨부랄 밸런스 게임 시작!</button>';
+            }, 3000);
+        }킨', '피자'],
                 ['😴 일찍 자기 vs 🌙 올나이트', '일찍 자기', '올나이트'],
                 ['💰 돈 vs ❤️ 사랑', '돈', '사랑'],
                 ['☀️ 여름 vs ❄️ 겨울', '여름', '겨울'],
