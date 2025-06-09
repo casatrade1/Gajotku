@@ -1,9 +1,861 @@
-<!DOCTYPE html>
+<!-- 하단 네비게이션 -->
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-items">
+            <div class="nav-item active" onclick="showSection('drinking')">
+                <span class="icon">🍻</span>
+                <span>개씨부랄</span>
+            </div>
+            <div class="nav-item" onclick="showSection('friends')">
+                <span class="icon">🎂</span>
+                <span>가족들</span>
+            </div>
+            <div class="nav-item" onclick="showSection('gallery')">
+                <span class="icon">📸</span>
+                <span>투표</span>
+            </div>
+            <div class="nav-item" onclick="showSection('diary')">
+                <span class="icon">📝</span>
+                <span>일기</span>
+            </div>
+            <div class="nav-item" onclick="showSection('quotes')">
+                <span class="icon">💬</span>
+                <span>명언</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 술친구 추가 모달 -->
+    <div id="drinkModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🍻 개씨부랄 술자리 기록</h3>
+                <button class="close-btn" onclick="closeDrinkModal()">&times;</button>
+            </div>
+            
+            <div class="input-group">
+                <label>날짜:</label>
+                <input type="date" id="drinkDate" />
+            </div>
+            
+            <div class="input-group">
+                <label>함께 마신 개씨부랄 친구들:</label>
+                <div class="friend-selector" id="friendSelector">
+                    <!-- 친구 선택 체크박스들이 여기에 생성됩니다 -->
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>개씨부랄 메모:</label>
+                <textarea id="drinkMemo" placeholder="어디서 뭘 마셨는지, 개씨부랄했던 일 등..."></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addDrinkLog()">🍻 개씨부랄 기록하기</button>
+        </div>
+    </div>
+
+    <!-- 투표 사진 추가 모달 -->
+    <div id="galleryPhotoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">📸 개씨부랄 사진 투표 추가</h3>
+                <button class="close-btn" onclick="closeGalleryPhotoModal()">&times;</button>
+            </div>
+            
+            <div class="input-group">
+                <label>사진 제목:</label>
+                <input type="text" id="galleryPhotoTitle" placeholder="개씨부랄한 제목을 입력하세요!" />
+            </div>
+            
+            <div class="input-group">
+                <label>사진 업로드:</label>
+                <input type="file" id="votePhoto" accept="image/*" onchange="previewVotePhoto()" style="margin-bottom: 10px;" />
+                <div id="votePhotoPreview" class="hidden">
+                    <img id="votePhotoImg" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px;" />
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addVotePhoto()">🗳️ 개씨부랄 사진 추가</button>
+        </div>
+    </div>
+
+    <!-- 일기 추가 모달 -->
+    <div id="diaryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">📝 개씨부랄 일기 쓰기</h3>
+                <button class="close-btn" onclick="closeDiaryModal()">&times;</button>
+            </div>
+            
+            <div class="input-group">
+                <label>날짜:</label>
+                <input type="date" id="diaryDate" />
+            </div>
+            
+            <div class="input-group">
+                <label>제목:</label>
+                <input type="text" id="diaryTitle" placeholder="오늘 제목은?" />
+            </div>
+            
+            <div class="input-group">
+                <label>오늘 뭐했나요?:</label>
+                <textarea id="diaryContent" placeholder="개씨부랄한 하루를 간단하게 써보세요..." rows="5"></textarea>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addDiary()">📝 일기 저장</button>
+        </div>
+    </div>
+
+    <!-- 명언 추가 모달 -->
+    <div id="quoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">💬 개씨부랄 명언 추가</h3>
+                <button class="close-btn" onclick="closeQuoteModal()">&times;</button>
+            </div>
+            
+            <div class="input-group">
+                <label>명언:</label>
+                <textarea id="quoteText" placeholder="개씨부랄 레전드 발언을 입력하세요..."></textarea>
+            </div>
+            
+            <div class="input-group">
+                <label>발언자:</label>
+                <select id="quoteSpeaker">
+                    <option value="">친구 선택</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" onclick="addQuote()">💬 개씨부랄 명언 추가</button>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔥 개씨부랄 월드 로딩 시작!');
+
+        // 데이터 저장소
+        let friendsData = [];
+        let drinkLogs = [];
+        let votePhotos = [];
+        let diaryEntries = [];
+        let quotes = [];
+
+        // 데이터 저장/로드 함수
+        function saveData() {
+            try {
+                localStorage.setItem('friendsData', JSON.stringify(friendsData));
+                localStorage.setItem('drinkLogs', JSON.stringify(drinkLogs));
+                localStorage.setItem('votePhotos', JSON.stringify(votePhotos));
+                localStorage.setItem('diaryEntries', JSON.stringify(diaryEntries));
+                localStorage.setItem('quotes', JSON.stringify(quotes));
+                console.log('✅ 데이터 저장 완료');
+            } catch(e) {
+                console.log('localStorage 사용 불가 - 메모리에만 저장됩니다');
+            }
+        }
+        
+        function loadData() {
+            try {
+                friendsData = JSON.parse(localStorage.getItem('friendsData')) || [];
+                drinkLogs = JSON.parse(localStorage.getItem('drinkLogs')) || [];
+                votePhotos = JSON.parse(localStorage.getItem('votePhotos')) || [];
+                diaryEntries = JSON.parse(localStorage.getItem('diaryEntries')) || [];
+                quotes = JSON.parse(localStorage.getItem('quotes')) || [];
+                console.log('✅ 데이터 로드 완료');
+            } catch(e) {
+                console.log('localStorage 사용 불가 - 기본 데이터로 시작합니다');
+            }
+        }
+
+        // 친구 데이터 초기화
+        function initializeFriends() {
+            if (friendsData.length === 0) {
+                const realFriends = [
+                    { id: 1, nickname: 'YSN JOKER', emoji: '🃏', realName: '강정현', birthday: '0807' },
+                    { id: 2, nickname: '복쿠레', emoji: '🎲', realName: '복지현', birthday: '0115' },
+                    { id: 3, nickname: '각해킹(숙주)', emoji: '🦠', realName: '곽도윤', birthday: '0731' },
+                    { id: 4, nickname: '노소맨', emoji: '🎯', realName: '심재현', birthday: '1005' },
+                    { id: 5, nickname: '쾌걸근육맨', emoji: '💪', realName: '양규현', birthday: '0419' },
+                    { id: 6, nickname: '26년 4월', emoji: '📅', realName: '이학준', birthday: '0222' },
+                    { id: 7, nickname: '희준아 너만 믿는다', emoji: '🙏', realName: '한희준', birthday: '1221' },
+                    { id: 8, nickname: '누구세요', emoji: '❓', realName: '전상혁', birthday: '0818' },
+                    { id: 9, nickname: '미나리', emoji: '🌿', realName: '양정후', birthday: '1018' },
+                    { id: 10, nickname: '황대표', emoji: '👔', realName: '황승하', birthday: '0711' },
+                    { id: 11, nickname: '철구', emoji: '🔩', realName: '이서현', birthday: '0124' },
+                    { id: 12, nickname: '강순건', emoji: '🏗️', realName: '강순건', birthday: '0418' },
+                    { id: 13, nickname: '윤희태', emoji: '🌟', realName: '윤희태', birthday: '0115' },
+                    { id: 14, nickname: '박주호', emoji: '⚽', realName: '박주호', birthday: '0601' },
+                    { id: 15, nickname: '신민호', emoji: '🎭', realName: '신민호', birthday: '0303' }
+                ];
+                
+                friendsData = realFriends;
+                saveData();
+            }
+            
+            loadFriends();
+            generateFriendSelector();
+            updateSelects();
+            updateNextBirthday();
+        }
+
+        // 진입 함수
+        function enterTheFuckingWorld() {
+            console.log('🚀 개씨부랄 월드 입장 버튼 클릭됨!');
+            
+            try {
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('mainContainer').classList.add('active');
+                document.getElementById('mainContainer').style.display = 'block';
+                document.getElementById('topNav').classList.add('active');
+                document.getElementById('bottomNav').classList.add('active');
+                
+                // 데이터 초기화
+                loadData();
+                initializeFriends();
+                loadDrinkLogs();
+                loadVoteGallery();
+                loadDiaryEntries();
+                loadQuotes();
+                updateRanking();
+                updateThisMonthBirthdays();
+                updateFunStats();
+                
+                console.log('🎉 개씨부랄 월드 입장 완료!');
+                
+            } catch (error) {
+                console.error('입장 중 에러:', error);
+                alert('개씨부랄! 에러났네요 ㅋㅋ 새로고침 해보세요');
+            }
+        }
+
+        // 섹션 전환
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.getElementById(sectionName).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+            
+            // 특정 섹션별 추가 로직
+            if (sectionName === 'friends') {
+                updateThisMonthBirthdays();
+                updateFunStats();
+            }
+        }
+
+        // 생일까지 남은 일수 계산
+        function getDaysUntilBirthday(birthday) {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const month = parseInt(birthday.substring(0, 2)) - 1;
+            const day = parseInt(birthday.substring(2, 4));
+            
+            let birthdayThisYear = new Date(currentYear, month, day);
+            
+            if (birthdayThisYear < today) {
+                birthdayThisYear = new Date(currentYear + 1, month, day);
+            }
+            
+            const diffTime = birthdayThisYear - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays;
+        }
+
+        // 다음 생일 업데이트
+        function updateNextBirthday() {
+            const nextBirthdayContainer = document.getElementById('nextBirthday');
+            if (!nextBirthdayContainer) return;
+            
+            const birthdayList = friendsData.map(friend => ({
+                ...friend,
+                daysUntil: getDaysUntilBirthday(friend.birthday)
+            })).sort((a, b) => a.daysUntil - b.daysUntil);
+            
+            const nextBirthday = birthdayList[0];
+            
+            if (nextBirthday.daysUntil === 0) {
+                nextBirthdayContainer.innerHTML = `🎉 오늘은 ${nextBirthday.nickname}의 생일!`;
+                nextBirthdayContainer.style.color = '#ff6b6b';
+                nextBirthdayContainer.style.fontWeight = '600';
+            } else {
+                nextBirthdayContainer.innerHTML = `🎂 다음 생일: ${nextBirthday.nickname} (${nextBirthday.daysUntil}일 후)`;
+            }
+        }
+
+        // 친구 목록 로드
+        function loadFriends() {
+            const container = document.getElementById('friendsList');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            friendsData.forEach(friend => {
+                const friendElement = document.createElement('div');
+                friendElement.className = 'friend-item';
+                friendElement.onclick = () => alert(`${friend.nickname} (${friend.realName})\n생일까지 ${getDaysUntilBirthday(friend.birthday)}일`);
+                
+                const daysUntilBirthday = getDaysUntilBirthday(friend.birthday);
+                
+                friendElement.innerHTML = `
+                    <span class="friend-emoji">${friend.emoji}</span>
+                    <div class="friend-name">${friend.nickname}</div>
+                    <div class="friend-status">생일까지 ${daysUntilBirthday}일</div>
+                `;
+                
+                container.appendChild(friendElement);
+            });
+        }
+
+        // 이번달 생일자 업데이트
+        function updateThisMonthBirthdays() {
+            const container = document.getElementById('thisMonthBirthdays');
+            if (!container) return;
+            
+            const currentMonth = new Date().getMonth() + 1;
+            
+            const thisMonthBirthdays = friendsData.filter(friend => {
+                const friendMonth = parseInt(friend.birthday.substring(0, 2));
+                return friendMonth === currentMonth;
+            });
+            
+            if (thisMonthBirthdays.length === 0) {
+                container.innerHTML = '<p style="text-align: center; margin: 0;">이번달에는 생일자가 없어요! 🎈</p>';
+            } else {
+                container.innerHTML = thisMonthBirthdays.map(friend => {
+                    const day = parseInt(friend.birthday.substring(2, 4));
+                    const daysUntil = getDaysUntilBirthday(friend.birthday);
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                            <span>${friend.emoji} ${friend.nickname}</span>
+                            <span>${currentMonth}월 ${day}일 ${daysUntil === 0 ? '(오늘!)' : `(${daysUntil}일 후)`}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // 재미난 통계 업데이트
+        function updateFunStats() {
+            const container = document.getElementById('funStats');
+            if (!container) return;
+            
+            const stats = [
+                `🍻 총 개씨부랄 술자리: ${drinkLogs.length}회`,
+                `📸 업로드된 개씨부랄 사진: ${votePhotos.length}장`,
+                `📝 개씨부랄 일기: ${diaryEntries.length}개`,
+                `💬 개씨부랄 명언: ${quotes.length}개`,
+                `🏆 최다 개씨부랄러: ${getMostDrinkingFriend()}`
+            ];
+            
+            container.innerHTML = stats.map(stat => 
+                `<div style="padding: 8px 0; border-bottom: 1px solid #eee;">${stat}</div>`
+            ).join('');
+        }
+
+        // 최다 술친구 찾기
+        function getMostDrinkingFriend() {
+            if (drinkLogs.length === 0) return "아직 없음";
+            
+            const drinkCounts = {};
+            drinkLogs.forEach(log => {
+                log.participants.forEach(friendId => {
+                    drinkCounts[friendId] = (drinkCounts[friendId] || 0) + 1;
+                });
+            });
+            
+            const topDrinkerId = Object.keys(drinkCounts).reduce((a, b) => 
+                drinkCounts[a] > drinkCounts[b] ? a : b
+            );
+            
+            const topDrinker = friendsData.find(f => f.id == topDrinkerId);
+            return topDrinker ? `${topDrinker.nickname} (${drinkCounts[topDrinkerId]}회)` : "아직 없음";
+        }
+
+        // 랜덤 친구 뽑기
+        function pickRandomFriend() {
+            const randomFriend = friendsData[Math.floor(Math.random() * friendsData.length)];
+            document.getElementById('randomFriend').textContent = randomFriend.emoji;
+            document.getElementById('randomFriendName').textContent = `오늘 술값 낼 호구: ${randomFriend.nickname} ㅋㅋㅋ`;
+        }
+
+        // 친구별 술친구 횟수 계산
+        function getDrinkCountForFriend(friendId) {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            return drinkLogs.filter(log => {
+                const logDate = new Date(log.date);
+                return logDate.getMonth() === currentMonth && 
+                       logDate.getFullYear() === currentYear &&
+                       log.participants.includes(friendId);
+            }).length;
+        }
+
+        // 랭킹 업데이트
+        function updateRanking() {
+            const container = document.getElementById('drinkingRanking');
+            if (!container) return;
+            
+            const drinkCounts = friendsData.map(friend => {
+                const count = getDrinkCountForFriend(friend.id);
+                return {
+                    friend: friend,
+                    count: count
+                };
+            }).sort((a, b) => b.count - a.count);
+            
+            container.innerHTML = '';
+            
+            if (drinkCounts.every(item => item.count === 0)) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">아직 개씨부랄 기록이 없어요!</p>';
+                return;
+            }
+            
+            const rankingListDiv = document.createElement('div');
+            rankingListDiv.className = 'ranking-list';
+            
+            drinkCounts.slice(0, 5).forEach((item, index) => {
+                const rankElement = document.createElement('div');
+                rankElement.className = 'ranking-item';
+                
+                const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                
+                rankElement.innerHTML = `
+                    <div class="rank-number">${index + 1}</div>
+                    <div class="rank-emoji">${item.friend.emoji}</div>
+                    <div class="rank-info">
+                        <div class="rank-name">${item.friend.nickname}</div>
+                        <div class="rank-count">이번달 ${item.count}회</div>
+                    </div>
+                    <div style="font-size: 1.5rem;">${medals[index] || '🏅'}</div>
+                `;
+                
+                rankingListDiv.appendChild(rankElement);
+            });
+            
+            container.appendChild(rankingListDiv);
+            
+            // 통계 업데이트
+            const topCount = drinkCounts[0] ? drinkCounts[0].count : 0;
+            document.getElementById('topDrinkerCount').textContent = topCount;
+            document.getElementById('myDrinkCount').textContent = drinkCounts[0] ? drinkCounts[0].count : 0;
+        }
+
+        // 친구 선택기 생성
+        function generateFriendSelector() {
+            const container = document.getElementById('friendSelector');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            friendsData.forEach(friend => {
+                const friendOption = document.createElement('div');
+                friendOption.className = 'friend-checkbox';
+                friendOption.onclick = () => toggleFriendSelection(friend.id);
+                
+                friendOption.innerHTML = `
+                    <input type="checkbox" id="friend_${friend.id}" value="${friend.id}">
+                    <span class="emoji">${friend.emoji}</span>
+                    <span class="name">${friend.nickname}</span>
+                `;
+                
+                container.appendChild(friendOption);
+            });
+        }
+
+        // 친구 선택 토글
+        function toggleFriendSelection(friendId) {
+            const checkbox = document.getElementById(`friend_${friendId}`);
+            const container = checkbox.parentElement;
+            
+            checkbox.checked = !checkbox.checked;
+            container.classList.toggle('selected', checkbox.checked);
+        }
+
+        // 셀렉트 박스 업데이트
+        function updateSelects() {
+            const selects = ['quoteSpeaker'];
+            
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                
+                const currentValue = select.value;
+                
+                while(select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                friendsData.forEach(friend => {
+                    const option = document.createElement('option');
+                    option.value = friend.id;
+                    option.textContent = friend.nickname;
+                    select.appendChild(option);
+                });
+                
+                select.value = currentValue;
+            });
+        }
+
+        // 모달 관련 함수들
+        function openDrinkModal() {
+            document.getElementById('drinkModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeDrinkModal() {
+            document.getElementById('drinkModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetDrinkForm();
+        }
+
+        function resetDrinkForm() {
+            document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('drinkMemo').value = '';
+            
+            document.querySelectorAll('.friend-checkbox').forEach(item => {
+                item.classList.remove('selected');
+                item.querySelector('input').checked = false;
+            });
+        }
+
+        function addDrinkLog() {
+            const date = document.getElementById('drinkDate').value;
+            const memo = document.getElementById('drinkMemo').value;
+            const selectedFriends = Array.from(document.querySelectorAll('.friend-checkbox.selected input'))
+                .map(input => parseInt(input.value));
+            
+            if (!date || selectedFriends.length === 0) {
+                alert('날짜와 친구를 선택해주세요!');
+                return;
+            }
+            
+            const newLog = {
+                id: Date.now(),
+                date: date,
+                participants: selectedFriends,
+                memo: memo,
+                timestamp: new Date().toISOString()
+            };
+            
+            drinkLogs.unshift(newLog);
+            saveData();
+            
+            loadDrinkLogs();
+            updateRanking();
+            loadFriends();
+            updateThisMonthBirthdays();
+            updateFunStats();
+            closeDrinkModal();
+        }
+
+        function loadDrinkLogs() {
+            const container = document.getElementById('drinkLogs');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (drinkLogs.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">아직 개씨부랄 기록이 없어요! 첫 기록을 남겨보세요 🍻</p>';
+                return;
+            }
+            
+            drinkLogs.slice(0, 10).forEach(log => {
+                const logElement = document.createElement('div');
+                logElement.className = 'drink-log';
+                
+                const participants = log.participants.map(id => {
+                    const friend = friendsData.find(f => f.id === id);
+                    return friend ? friend.nickname : '알 수 없음';
+                });
+                
+                logElement.innerHTML = `
+                    <button class="delete-btn" onclick="deleteDrinkLog(${log.id})" title="삭제">✕</button>
+                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">${new Date(log.date).toLocaleDateString('ko-KR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        weekday: 'short'
+                    })}</div>
+                    <div style="margin-bottom: 8px;">
+                        ${participants.map(name => `<span style="background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; margin-right: 5px; display: inline-block; margin-bottom: 5px;">${name}</span>`).join('')}
+                    </div>
+                    ${log.memo ? `<div style="margin-top: 8px; font-size: 0.9rem; padding-right: 30px;">${log.memo}</div>` : ''}
+                `;
+                
+                container.appendChild(logElement);
+            });
+        }
+
+        function deleteDrinkLog(logId) {
+            if (confirm('정말 이 개씨부랄 기록을 삭제하시겠어요?')) {
+                drinkLogs = drinkLogs.filter(log => log.id !== logId);
+                saveData();
+                loadDrinkLogs();
+                updateRanking();
+                loadFriends();
+                updateFunStats();
+            }
+        }
+
+        // 투표 갤러리 관련 함수들
+        function openGalleryPhotoModal() {
+            document.getElementById('galleryPhotoModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeGalleryPhotoModal() {
+            document.getElementById('galleryPhotoModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetVotePhotoForm();
+        }
+
+        function resetVotePhotoForm() {
+            document.getElementById('galleryPhotoTitle').value = '';
+            document.getElementById('votePhoto').value = '';
+            document.getElementById('votePhotoPreview').classList.add('hidden');
+        }
+
+        function previewVotePhoto() {
+            const file = document.getElementById('votePhoto').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('votePhotoImg').src = e.target.result;
+                    document.getElementById('votePhotoPreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addVotePhoto() {
+            const title = document.getElementById('galleryPhotoTitle').value;
+            const photoFile = document.getElementById('votePhoto').files[0];
+            
+            if (!title || !photoFile) {
+                alert('제목과 사진을 입력해주세요!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const newVotePhoto = {
+                    id: Date.now(),
+                    title: title,
+                    photo: e.target.result,
+                    votes: 0,
+                    voters: [],
+                    timestamp: new Date().toISOString()
+                };
+                
+                votePhotos.unshift(newVotePhoto);
+                saveData();
+                
+                loadVoteGallery();
+                closeGalleryPhotoModal();
+            };
+            reader.readAsDataURL(photoFile);
+        }
+
+        function loadVoteGallery() {
+            const container = document.getElementById('voteGallery');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (votePhotos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">개씨부랄 투표 사진이 없어요! 첫 사진을 올려보세요 📸</p>';
+                return        /* 숨김 */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 메인 스크린 -->
+    <div class="main-screen" id="mainScreen">
+        <div class="floating-emojis">
+            <div class="floating-emoji">🍻</div>
+            <div class="floating-emoji">🤮</div>
+            <div class="floating-emoji">🤣</div>
+            <div class="floating-emoji">🔥</div>
+            <div class="floating-emoji">💩</div>
+        </div>
+        
+        <h1 class="main-title">🔥 개씨부랄 가족 🔥</h1>
+        <p class="main-subtitle">웰컴투 레전드 월드 ㅋㅋㅋㅋ</p>
+        
+        <div class="warning-box">
+            <div class="warning-title">⚠️ 입장 전 주의사항 ⚠️</div>
+            <div class="warning-list">
+                • 흑역사 노출 각오하고 들어오세요<br>
+                • 술먹고 올린 사진들 있음 주의<br>
+                • 레전드 명언들 심장 약한 분 출입금지<br>
+                • 투표 1등은 개쪽팔 각오하세요<br>
+                • 개씨부랄 정신으로 무장하세요
+            </div>
+        </div>
+        
+        <button class="enter-btn" onclick="enterTheFuckingWorld()">
+            🚀 개씨부랄 월드 입장
+        </button>
+        
+        <div class="debug-info">
+            버튼 안되면 새로고침 ㄱㄱ<br>
+            아니면 브라우저 바꿔보세요 ㅋㅋ
+        </div>
+    </div>
+
+    <!-- 상단 네비 -->
+    <div class="top-nav" id="topNav">
+        <div class="logo">🔥 개씨부랄 월드</div>
+        <div id="nextBirthday" style="font-size: 0.8rem; color: #666; text-align: center; flex: 1;">
+            <!-- 다음 생일 정보가 여기에 표시됩니다 -->
+        </div>
+        <button class="menu-btn" onclick="alert('개발중입니다 ㅋㅋ')">☰</button>
+    </div>
+
+    <!-- 메인 컨테이너 -->
+    <div class="container" id="mainContainer">
+        
+        <!-- 개씨부랄 섹션 -->
+        <div id="drinking" class="section active">
+            <h2 class="section-title">🍻 개씨부랄 술자리 기록</h2>
+            
+            <!-- 이번달 통계 -->
+            <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                <h3 style="margin-bottom: 15px; text-align: center;">🏆 이번달 개씨부랄킹 순위</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 15px; text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 5px;" id="myDrinkCount">0</div>
+                        <div style="font-size: 0.8rem; opacity: 0.9;">내 개씨부랄 횟수</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 15px; text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 5px;" id="topDrinkerCount">0</div>
+                        <div style="font-size: 0.8rem; opacity: 0.9;">개씨부랄킹 기록</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 랭킹 -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">🥇 이번달 개씨부랄 술킹 랭킹</h3>
+                <div id="drinkingRanking">
+                    <!-- 랭킹이 여기에 표시됩니다 -->
+                </div>
+            </div>
+
+            <!-- 술자리 기록 -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">📝 개씨부랄 술자리 기록</h3>
+                    <button onclick="openDrinkModal()" style="background: linear-gradient(45deg, #ff6b6b, #ee5a52); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 추가</button>
+                </div>
+                <div id="drinkLogs">
+                    <!-- 술자리 기록이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 가족들 섹션 -->
+        <div id="friends" class="section">
+            <h2 class="section-title">🎂 개씨부랄 가족들</h2>
+            
+            <!-- 이번달 생일자 -->
+            <div class="card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white;">
+                <h3 style="margin-bottom: 15px; text-align: center;">🎂 이번달 생일자들</h3>
+                <div id="thisMonthBirthdays">
+                    <!-- 이번달 생일자들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 가족 목록 -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">👥 개씨부랄 가족 멤버</h3>
+                <div id="friendsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <!-- 친구들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 재미난 통계 -->
+            <div class="card">
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">📊 개씨부랄 통계</h3>
+                <div id="funStats">
+                    <!-- 통계가 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 랜덤 친구 뽑기 -->
+            <div class="card" style="text-align: center;">
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">🎲 오늘 누가 술값 낼까? ㅋㅋ</h3>
+                <div id="randomFriend" style="font-size: 3rem; margin: 20px 0;">🎯</div>
+                <div id="randomFriendName" style="font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">술값 낼 호구를 뽑아보세요!</div>
+                <button class="btn btn-primary" onclick="pickRandomFriend()">🎲 호구 뽑기!</button>
+            </div>
+        </div>
+
+        <!-- 투표 갤러리 섹션 -->
+        <div id="gallery" class="section">
+            <h2 class="section-title">📸 개씨부랄 투표 갤러리</h2>
+            
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">🏆 개씨부랄 사진 랭킹 (투표)</h3>
+                    <button onclick="openGalleryPhotoModal()" style="background: linear-gradient(45deg, #ff6b6b, #ee5a52); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 사진 추가</button>
+                </div>
+                <div id="voteGallery">
+                    <!-- 투표 사진들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 일기장 섹션 -->
+        <div id="diary" class="section">
+            <h2 class="section-title">📝 개씨부랄 일기장</h2>
+            
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">📖 오늘 뭐했나요?</h3>
+                    <button onclick="openDiaryModal()" style="background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 일기 쓰기</button>
+                </div>
+                <div id="diaryList">
+                    <!-- 일기들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 명언집 섹션 -->
+        <div id="quotes" class="section">
+            <h2 class="section-title">💬 개씨부랄 명언집</h2>
+            
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">💭 레전드 명언들</h3>
+                    <button onclick="openQuoteModal()" style="background: linear-gradient(45deg, #f093fb, #f5576c); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 명언 추가</button>
+                </div>
+                <div id="quotesList">
+                    <!-- 명언들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 하단 네비게이션 -->
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-items">
+            <div class="nav-item active<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>14명의 레전드 친구들 🍻</title>
+    <title>🔥 개씨부랄 가족 월드 🔥</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
         
@@ -23,6 +875,23 @@
             padding-bottom: 80px;
         }
 
+        /* 애니메이션 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 107, 107, 0.8); }
+        }
+
         /* 메인 스크린 */
         .main-screen {
             min-height: 100vh;
@@ -32,67 +901,110 @@
             align-items: center;
             text-align: center;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            position: relative;
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%);
         }
+
+        .floating-emojis {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .floating-emoji:nth-child(1) { top: 15%; left: 10%; animation-delay: 0s; }
+        .floating-emoji:nth-child(2) { top: 25%; right: 15%; animation-delay: 1s; }
+        .floating-emoji:nth-child(3) { bottom: 30%; left: 20%; animation-delay: 2s; }
+        .floating-emoji:nth-child(4) { top: 45%; right: 25%; animation-delay: 3s; }
+        .floating-emoji:nth-child(5) { bottom: 20%; right: 10%; animation-delay: 4s; }
 
         .main-title {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 900;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f093fb);
-            background-size: 400% 400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradient 3s ease infinite;
+            color: white;
+            text-shadow: 3px 3px 0px #ff6b6b, 6px 6px 0px #4ecdc4;
             margin-bottom: 1rem;
-        }
-
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            animation: shake 2s ease-in-out infinite;
+            z-index: 2;
+            position: relative;
         }
 
         .main-subtitle {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             color: white;
             margin-bottom: 2rem;
-            opacity: 0.9;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 2;
+            position: relative;
+        }
+
+        .warning-box {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 3px dashed #ff6b6b;
+            z-index: 2;
+            position: relative;
+            max-width: 350px;
+        }
+
+        .warning-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+
+        .warning-list {
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.6;
+            text-align: left;
         }
 
         .enter-btn {
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-weight: 700;
+            padding: 20px 50px;
+            font-size: 1.4rem;
+            font-weight: 900;
             border: none;
             border-radius: 50px;
             background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
             color: white;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            animation: glow 2s ease-in-out infinite;
+            z-index: 2;
+            position: relative;
+            border: 3px solid white;
         }
 
         .enter-btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
         }
 
         .enter-btn:active {
             transform: scale(0.95);
         }
 
-        /* 메인 컨테이너 */
-        .container {
-            display: none;
-            padding: 20px 15px;
-            max-width: 100%;
-            margin: 0 auto;
-        }
-
-        .container.active {
-            display: block;
+        .debug-info {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            z-index: 2;
+            position: relative;
         }
 
         /* 상단 네비 */
@@ -118,7 +1030,8 @@
         .logo {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #333;
+            color: #ff6b6b;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         .menu-btn {
@@ -126,6 +1039,18 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
+        }
+
+        /* 메인 컨테이너 */
+        .container {
+            display: none;
+            padding: 20px 15px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .container.active {
+            display: block;
         }
 
         /* 하단 네비게이션 */
@@ -165,8 +1090,8 @@
         }
 
         .nav-item.active {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
         }
 
         .nav-item .icon {
@@ -197,7 +1122,7 @@
             color: white;
             text-align: center;
             margin-bottom: 20px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         /* 카드 스타일 */
@@ -210,11 +1135,34 @@
             backdrop-filter: blur(20px);
         }
 
-        /* 친구 리스트 */
-        .friends-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 추가 스타일 */
+        .drink-log, .diary-item, .quote-item, .photo-item {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
         }
 
         .friend-item {
@@ -225,7 +1173,6 @@
             color: white;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
         }
 
         .friend-item:active {
@@ -249,113 +1196,6 @@
             opacity: 0.8;
         }
 
-        /* 술친구 섹션 */
-        .drink-section {
-            margin-bottom: 25px;
-        }
-
-        .drink-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .drink-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .add-drink-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .drink-log {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 10px;
-        }
-
-        .drink-date {
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .drink-participants {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .participant-tag {
-            background: linear-gradient(45deg, #4ecdc4, #44a08d);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .drink-photo {
-            width: 100%;
-            max-height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-top: 10px;
-        }
-
-        /* 월간 통계 */
-        .monthly-stats {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 15px;
-            padding: 20px;
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .stats-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .stat-item {
-            background: rgba(255,255,255,0.2);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            opacity: 0.9;
-        }
-
-        /* 랭킹 */
         .ranking-list {
             background: white;
             border-radius: 15px;
@@ -399,37 +1239,70 @@
             color: #666;
         }
 
-        /* 갤러리 */
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .photo-item {
-            aspect-ratio: 1;
-            background: #f0f0f0;
-            border-radius: 10px;
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,0,0,0.8);
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            overflow: hidden;
+            font-size: 0.8rem;
+            border: none;
+            z-index: 10;
         }
 
-        .photo-item img {
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            background-color: rgba(0,0,0,0.8);
+            overflow-y: auto;
         }
 
-        .photo-placeholder {
+        .modal-content {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            position: relative;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
             font-size: 1.5rem;
-            color: #ccc;
+            cursor: pointer;
+            color: #999;
         }
 
-        /* 입력 폼 */
         .input-group {
             margin-bottom: 15px;
         }
@@ -460,7 +1333,6 @@
             border-color: #4ecdc4;
         }
 
-        /* 친구 선택 체크박스 */
         .friend-selector {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -496,205 +1368,94 @@
             font-size: 0.8rem;
             font-weight: 500;
         }
-
-        /* 버튼 */
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #4ecdc4, #44a08d);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            color: white;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        /* 파일 업로드 */
-        .file-upload {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-upload input[type="file"] {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .file-upload-label {
-            display: block;
-            padding: 15px;
-            background: #f8f9fa;
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .file-upload-label:hover {
-            background: #e9ecef;
-            border-color: #4ecdc4;
-        }
-
-        .file-upload-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            color: #ccc;
-        }
-
-        .file-upload-text {
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        /* 모달 */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            overflow-y: auto;
-        }
-
-        .modal-content {
-            background: white;
-            margin: 20px;
-            padding: 20px;
-            border-radius: 15px;
-            position: relative;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .modal-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-        }
-
-        /* 반응형 */
-        @media (max-width: 480px) {
-            .main-title {
-                font-size: 2rem;
-            }
-            
-            .friends-list {
-                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-        }
-
-        /* 숨김 */
-        .hidden {
-            display: none !important;
-        }
     </style>
 </head>
 <body>
     <!-- 메인 스크린 -->
     <div class="main-screen" id="mainScreen">
-        <h1 class="main-title">🍻 14명의 레전드</h1>
-        <p class="main-subtitle">술친구들의 추억 저장소</p>
-        <button class="enter-btn" onclick="enterSite()">🚀 들어가기</button>
+        <div class="floating-emojis">
+            <div class="floating-emoji">🍻</div>
+            <div class="floating-emoji">🤮</div>
+            <div class="floating-emoji">🤣</div>
+            <div class="floating-emoji">🔥</div>
+            <div class="floating-emoji">💩</div>
+        </div>
+        
+        <h1 class="main-title">🔥 개씨부랄 가족 🔥</h1>
+        <p class="main-subtitle">웰컴투 레전드 월드 ㅋㅋㅋㅋ</p>
+        
+        <div class="warning-box">
+            <div class="warning-title">⚠️ 입장 전 주의사항 ⚠️</div>
+            <div class="warning-list">
+                • 흑역사 노출 각오하고 들어오세요<br>
+                • 술먹고 올린 사진들 있음 주의<br>
+                • 레전드 명언들 심장 약한 분 출입금지<br>
+                • 투표 1등은 개쪽팔 각오하세요<br>
+                • 개씨부랄 정신으로 무장하세요
+            </div>
+        </div>
+        
+        <button class="enter-btn" onclick="enterTheFuckingWorld()">
+            🚀 개씨부랄 월드 입장
+        </button>
+        
+        <div class="debug-info">
+            버튼 안되면 새로고침 ㄱㄱ<br>
+            아니면 브라우저 바꿔보세요 ㅋㅋ
+        </div>
     </div>
 
     <!-- 상단 네비 -->
     <div class="top-nav" id="topNav">
-        <div class="logo">🔥 개씨부랄</div>
-        <div id="nextBirthday" style="font-size: 0.8rem; color: #666; text-align: center; flex: 1;">
-            <!-- 다음 생일 정보가 여기에 표시됩니다 -->
-        </div>
-        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+        <div class="logo">🔥 개씨부랄 월드</div>
+        <button class="menu-btn" onclick="alert('개발중입니다 ㅋㅋ')">☰</button>
     </div>
 
     <!-- 메인 컨테이너 -->
     <div class="container" id="mainContainer">
         
-        <!-- 술친구 섹션 -->
+        <!-- 개씨부랄 섹션 -->
         <div id="drinking" class="section active">
-            <h2 class="section-title">🍻 개씨부랄 술친구 기록</h2>
+            <h2 class="section-title">🍻 개씨부랄 술자리 기록</h2>
             
             <!-- 이번달 통계 -->
-            <div class="monthly-stats">
-                <h3 class="stats-title">🏆 이번달 개씨부랄 술킹 순위</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-number" id="myDrinkCount">0</div>
-                        <div class="stat-label">내 개씨부랄 횟수</div>
+            <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                <h3 style="margin-bottom: 15px; text-align: center;">🏆 이번달 개씨부랄킹 순위</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 15px; text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 5px;" id="myDrinkCount">0</div>
+                        <div style="font-size: 0.8rem; opacity: 0.9;">내 개씨부랄 횟수</div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-number" id="topDrinkerCount">0</div>
-                        <div class="stat-label">개씨부랄킹 기록</div>
+                    <div style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 15px; text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; margin-bottom: 5px;" id="topDrinkerCount">0</div>
+                        <div style="font-size: 0.8rem; opacity: 0.9;">개씨부랄킹 기록</div>
                     </div>
                 </div>
             </div>
 
             <!-- 랭킹 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px; font-size: 1.1rem;">🥇 이번달 개씨부랄 술킹 랭킹</h3>
-                <div class="ranking-list" id="drinkingRanking">
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">🥇 이번달 개씨부랄 술킹 랭킹</h3>
+                <div id="drinkingRanking">
                     <!-- 랭킹이 여기에 표시됩니다 -->
                 </div>
             </div>
 
-            <!-- 최근 술친구 로그 -->
+            <!-- 술자리 기록 -->
             <div class="card">
-                <div class="drink-header">
-                    <h3 class="drink-title">📝 개씨부랄 술자리 기록</h3>
-                    <button class="add-drink-btn" onclick="openDrinkModal()">+ 추가</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">📝 개씨부랄 술자리 기록</h3>
+                    <button onclick="openDrinkModal()" style="background: linear-gradient(45deg, #ff6b6b, #ee5a52); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 추가</button>
                 </div>
                 <div id="drinkLogs">
-                    <!-- 술친구 로그가 여기에 표시됩니다 -->
+                    <!-- 술자리 기록이 여기에 표시됩니다 -->
                 </div>
             </div>
         </div>
 
-        <!-- 친구들 섹션 -->
+        <!-- 가족들 섹션 -->
         <div id="friends" class="section">
-            <h2 class="section-title">👥 개씨부랄 가족들</h2>
+            <h2 class="section-title">🎂 개씨부랄 가족들</h2>
             
             <!-- 이번달 생일자 -->
             <div class="card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white;">
@@ -704,17 +1465,17 @@
                 </div>
             </div>
             
-            <!-- 친구들 정보 -->
+            <!-- 가족 목록 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px;">👥 전체 멤버</h3>
-                <div class="friends-list" id="friendsList">
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">👥 개씨부랄 가족 멤버</h3>
+                <div id="friendsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
                     <!-- 친구들이 여기에 표시됩니다 -->
                 </div>
             </div>
             
             <!-- 재미난 통계 -->
             <div class="card">
-                <h3 style="margin-bottom: 15px;">📊 개씨부랄 통계</h3>
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">📊 개씨부랄 통계</h3>
                 <div id="funStats">
                     <!-- 통계가 여기에 표시됩니다 -->
                 </div>
@@ -722,21 +1483,21 @@
             
             <!-- 랜덤 친구 뽑기 -->
             <div class="card" style="text-align: center;">
-                <h3 style="margin-bottom: 15px;">🎲 오늘 누가 술값 낼까? ㅋㅋ</h3>
+                <h3 style="margin-bottom: 15px; color: #ff6b6b;">🎲 오늘 누가 술값 낼까? ㅋㅋ</h3>
                 <div id="randomFriend" style="font-size: 3rem; margin: 20px 0;">🎯</div>
                 <div id="randomFriendName" style="font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">술값 낼 호구를 뽑아보세요!</div>
                 <button class="btn btn-primary" onclick="pickRandomFriend()">🎲 호구 뽑기!</button>
             </div>
         </div>
 
-        // 갤러리 섹션
+        <!-- 투표 갤러리 섹션 -->
         <div id="gallery" class="section">
-            <h2 class="section-title">📸 투표 갤러리</h2>
+            <h2 class="section-title">📸 개씨부랄 투표 갤러리</h2>
             
             <div class="card">
-                <div class="drink-header">
-                    <h3 class="drink-title">🏆 사진 투표 랭킹</h3>
-                    <button class="add-drink-btn" onclick="openGalleryPhotoModal()">+ 사진 추가</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">🏆 개씨부랄 사진 랭킹 (투표)</h3>
+                    <button onclick="openGalleryPhotoModal()" style="background: linear-gradient(45deg, #ff6b6b, #ee5a52); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 사진 추가</button>
                 </div>
                 <div id="voteGallery">
                     <!-- 투표 사진들이 여기에 표시됩니다 -->
@@ -744,54 +1505,36 @@
             </div>
         </div>
 
-        <!-- 랜덤 게임 섹션 -->
-        <div id="random" class="section">
-            <h2 class="section-title">🎲 개씨부랄 게임존</h2>
+        <!-- 일기장 섹션 -->
+        <div id="diary" class="section">
+            <h2 class="section-title">📝 개씨부랄 일기장</h2>
             
-            <!-- 랜덤 추억 -->
             <div class="card">
-                <div class="random-box">
-                    <h3 style="margin-bottom: 1rem;">🎰 개씨부랄 추억 뽑기</h3>
-                    <div class="random-photo" id="randomPhoto">🎲</div>
-                    <p id="randomDescription" style="font-size: 1.2rem; margin-bottom: 2rem;">개씨부랄 추억을 뽑아보세요!</p>
-                    <button class="btn btn-primary" onclick="getRandomMemory()">🎲 추억 뽑기!</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">📖 오늘 뭐했나요?</h3>
+                    <button onclick="openDiaryModal()" style="background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 일기 쓰기</button>
                 </div>
-            </div>
-            
-            <!-- 오늘의 운세 -->
-            <div class="card">
-                <h3 style="margin-bottom: 15px; text-align: center;">🔮 오늘의 개씨부랄 운세</h3>
-                <div class="input-group">
-                    <label>친구 선택:</label>
-                    <select id="fortuneSelect">
-                        <option value="">친구를 선택하세요</option>
-                    </select>
-                </div>
-                <div id="fortuneResult" style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 15px; margin-top: 15px; display: none;">
-                    <!-- 운세 결과가 여기에 표시됩니다 -->
-                </div>
-                <button class="btn btn-secondary" onclick="getFortune()">🔮 운세 보기</button>
-            </div>
-            
-            <!-- 밸런스 게임 -->
-            <div class="card">
-                <h3 style="margin-bottom: 15px; text-align: center;">⚖️ 개씨부랄 밸런스 게임</h3>
-                <div id="balanceGame" style="text-align: center;">
-                    <button class="btn btn-primary" onclick="startBalanceGame()">🎯 개씨부랄 밸런스 게임 시작!</button>
+                <div id="diaryList">
+                    <!-- 일기들이 여기에 표시됩니다 -->
                 </div>
             </div>
         </div>
-        
+
         <!-- 명언집 섹션 -->
         <div id="quotes" class="section">
             <h2 class="section-title">💬 개씨부랄 명언집</h2>
             
-            <div class="card" id="quotesList">
-                <!-- 명언들이 여기에 표시됩니다 -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #ff6b6b;">💭 레전드 명언들</h3>
+                    <button onclick="openQuoteModal()" style="background: linear-gradient(45deg, #f093fb, #f5576c); color: white; border: none; border-radius: 20px; padding: 8px 15px; font-size: 0.8rem; font-weight: 600; cursor: pointer;">+ 명언 추가</button>
+                </div>
+                <div id="quotesList">
+                    <!-- 명언들이 여기에 표시됩니다 -->
+                </div>
             </div>
-            
-            <button class="btn btn-primary" onclick="openQuoteModal()">💬 개씨부랄 명언 추가</button>
         </div>
+
     </div>
 
     <!-- 하단 네비게이션 -->
@@ -809,9 +1552,9 @@
                 <span class="icon">📸</span>
                 <span>투표</span>
             </div>
-            <div class="nav-item" onclick="showSection('random')">
-                <span class="icon">🎲</span>
-                <span>게임</span>
+            <div class="nav-item" onclick="showSection('diary')">
+                <span class="icon">📝</span>
+                <span>일기</span>
             </div>
             <div class="nav-item" onclick="showSection('quotes')">
                 <span class="icon">💬</span>
@@ -820,1270 +1563,69 @@
         </div>
     </div>
 
-    <!-- 술친구 추가 모달 -->
-    <div id="drinkModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">🍻 술친구 기록 추가</h3>
-                <button class="close-btn" onclick="closeDrinkModal()">&times;</button>
-            </div>
-            
-            <div class="input-group">
-                <label>날짜:</label>
-                <input type="date" id="drinkDate" />
-            </div>
-            
-            <div class="input-group">
-                <label>함께 마신 친구들:</label>
-                <div class="friend-selector" id="friendSelector">
-                    <!-- 친구 선택 체크박스들이 여기에 생성됩니다 -->
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label>메모:</label>
-                <textarea id="drinkMemo" placeholder="어디서 뭘 마셨는지, 재밌었던 일 등..."></textarea>
-            </div>
-            
-            <div class="input-group">
-                <label>사진 추가:</label>
-                <div class="file-upload">
-                    <input type="file" id="drinkPhoto" accept="image/*" onchange="previewDrinkPhoto()" />
-                    <label for="drinkPhoto" class="file-upload-label">
-                        <div class="file-upload-icon">📷</div>
-                        <div class="file-upload-text">사진을 선택하거나 여기에 드롭하세요</div>
-                    </label>
-                </div>
-                <div id="drinkPhotoPreview" class="hidden">
-                    <img id="drinkPhotoImg" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px;" />
-                </div>
-            </div>
-            
-            <button class="btn btn-primary" onclick="addDrinkLog()">🍻 기록하기</button>
-        </div>
-    </div>
-
-        <!-- 투표 갤러리 사진 추가 모달 -->
-    <div id="galleryPhotoModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">📸 투표 사진 추가</h3>
-                <button class="close-btn" onclick="closeGalleryPhotoModal()">&times;</button>
-            </div>
-            
-            <div class="input-group">
-                <label>사진 제목:</label>
-                <input type="text" id="galleryPhotoTitle" placeholder="재밌는 제목을 입력하세요!" />
-            </div>
-            
-            <div class="input-group">
-                <label>사진:</label>
-                <div class="file-upload">
-                    <input type="file" id="votePhoto" accept="image/*" onchange="previewVotePhoto()" />
-                    <label for="votePhoto" class="file-upload-label">
-                        <div class="file-upload-icon">📷</div>
-                        <div class="file-upload-text">투표용 사진을 선택하세요</div>
-                    </label>
-                </div>
-                <div id="votePhotoPreview" class="hidden">
-                    <img id="votePhotoImg" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px;" />
-                </div>
-            </div>
-            
-            <button class="btn btn-primary" onclick="addVotePhoto()">🗳️ 투표 사진 추가</button>
-        </div>
-    </div>
-
-    <!-- 친구 사진 추가 모달 -->
-    <div id="friendPhotoModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">📸 친구 사진 추가</h3>
-                <button class="close-btn" onclick="closeFriendPhotoModal()">&times;</button>
-            </div>
-            
-            <div class="input-group">
-                <label>친구 선택:</label>
-                <select id="selectedFriendForPhoto">
-                    <option value="">친구를 선택하세요</option>
-                </select>
-            </div>
-            
-            <div class="input-group">
-                <label>사진 제목:</label>
-                <input type="text" id="friendPhotoTitle" placeholder="사진 설명을 입력하세요" />
-            </div>
-            
-            <div class="input-group">
-                <label>사진:</label>
-                <div class="file-upload">
-                    <input type="file" id="friendPhoto" accept="image/*" onchange="previewFriendPhoto()" />
-                    <label for="friendPhoto" class="file-upload-label">
-                        <div class="file-upload-icon">📷</div>
-                        <div class="file-upload-text">친구 사진을 선택하세요</div>
-                    </label>
-                </div>
-                <div id="friendPhotoPreview" class="hidden">
-                    <img id="friendPhotoImg" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; margin-top: 10px;" />
-                </div>
-            </div>
-            
-            <button class="btn btn-primary" onclick="addFriendPhoto()">📸 사진 추가</button>
-        </div>
-    </div>
-
-    <!-- 명언 추가 모달 -->
-    <div id="quoteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">💬 명언 추가</h3>
-                <button class="close-btn" onclick="closeQuoteModal()">&times;</button>
-            </div>
-            
-            <div class="input-group">
-                <label>명언:</label>
-                <textarea id="quoteText" placeholder="레전드 발언을 입력하세요..."></textarea>
-            </div>
-            
-            <div class="input-group">
-                <label>발언자:</label>
-                <select id="quoteSpeaker">
-                    <option value="">친구 선택</option>
-                </select>
-            </div>
-            
-            <button class="btn btn-primary" onclick="addQuote()">💬 추가하기</button>
-        </div>
-    </div>
-
     <script>
-        // 데이터 저장소 (메모리 방식 - 실제 배포시에는 localStorage 사용)
-        let friendsData = [];
-        let drinkLogs = [];
-        let votePhotos = []; // 투표용 사진들
-        let friendPhotos = []; // 친구별 사진들
-        let quotes = [];
-        
-        // 데이터 저장 함수들 (실제 배포시에는 localStorage 사용)
-        function saveData() {
+        console.log('🔥 개씨부랄 월드 로딩 시작!');
+
+        // 진입 함수
+        function enterTheFuckingWorld() {
+            console.log('🚀 개씨부랄 월드 입장 버튼 클릭됨!');
+            
             try {
-                localStorage.setItem('friendsData', JSON.stringify(friendsData));
-                localStorage.setItem('drinkLogs', JSON.stringify(drinkLogs));
-                localStorage.setItem('votePhotos', JSON.stringify(votePhotos));
-                localStorage.setItem('friendPhotos', JSON.stringify(friendPhotos));
-                localStorage.setItem('quotes', JSON.stringify(quotes));
-            } catch(e) {
-                // localStorage 사용 불가시 무시 (현재 환경)
-                console.log('localStorage 사용 불가 - 메모리에만 저장됩니다');
-            }
-        }
-        
-        function loadData() {
-            try {
-                friendsData = JSON.parse(localStorage.getItem('friendsData')) || [];
-                drinkLogs = JSON.parse(localStorage.getItem('drinkLogs')) || [];
-                votePhotos = JSON.parse(localStorage.getItem('votePhotos')) || [];
-                friendPhotos = JSON.parse(localStorage.getItem('friendPhotos')) || [];
-                quotes = JSON.parse(localStorage.getItem('quotes')) || [];
-                console.log('데이터 로드 완료:', {friendsData, drinkLogs, votePhotos, quotes});
-            } catch(e) {
-                // localStorage 사용 불가시 기본값 유지
-                console.log('localStorage 사용 불가 - 기본 데이터로 시작합니다');
+                // 메인 화면 숨기기
+                const mainScreen = document.getElementById('mainScreen');
+                console.log('메인스크린 요소:', mainScreen);
+                mainScreen.style.display = 'none';
+                
+                // 컨테이너 보이기
+                const container = document.getElementById('mainContainer');
+                console.log('컨테이너 요소:', container);
+                container.classList.add('active');
+                container.style.display = 'block';
+                
+                // 네비 보이기
+                const topNav = document.getElementById('topNav');
+                const bottomNav = document.getElementById('bottomNav');
+                console.log('네비 요소들:', topNav, bottomNav);
+                topNav.classList.add('active');
+                bottomNav.classList.add('active');
+                
+                console.log('🎉 입장 완료!');
+                
+            } catch (error) {
+                console.error('입장 중 에러:', error);
+                alert('개씨부랄! 에러났네요 ㅋㅋ 새로고침 해보세요');
             }
         }
 
-        // 초기화
+        // 페이지 로드시 실행
         document.addEventListener('DOMContentLoaded', function() {
-            loadData(); // 데이터 로드 시도
-            initializeFriends();
-            loadDrinkLogs();
-            loadVoteGallery();
-            loadFriendPhotos();
-            loadQuotes();
-            updateRanking();
-            updateThisMonthBirthdays();
-            updateFunStats();
+            console.log('🔥 DOM 로드 완료! 개씨부랄 월드 준비됨!');
             
-            // 운세 셀렉트 박스 업데이트
-            updateSelects();
-            
-            // 오늘 날짜 설정
-            document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
-        });initializeFriends();
-            loadDrinkLogs();
-            loadVoteGallery();
-            loadFriendPhotos();
-            loadQuotes();
-            updateRanking();
-            
-            // 오늘 날짜 설정
-            document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
+            // 버튼 이벤트 강제 등록
+            const enterBtn = document.querySelector('.enter-btn');
+            if (enterBtn) {
+                console.log('✅ 입장 버튼 찾음!');
+                enterBtn.addEventListener('click', function(e) {
+                    console.log('🎯 버튼 클릭 이벤트 발생!');
+                    e.preventDefault();
+                    enterTheFuckingWorld();
+                });
+            } else {
+                console.error('❌ 입장 버튼을 찾을 수 없음!');
+            }
         });
 
-        // 사이트 진입
-        function enterSite() {
-            console.log('enterSite 함수 호출됨');
+        // 백업 진입 함수 (전역)
+        window.enterTheFuckingWorld = function() {
+            console.log('🚀 백업 진입 함수 실행!');
             document.getElementById('mainScreen').style.display = 'none';
-            document.getElementById('mainContainer').classList.add('active');
-            document.getElementById('topNav').classList.add('active');
-            document.getElementById('bottomNav').classList.add('active');
-        }
+            document.getElementById('mainContainer').style.display = 'block';
+            document.getElementById('topNav').style.display = 'flex';
+            document.getElementById('bottomNav').style.display = 'block';
+        };
 
-        // 홈으로 돌아가기
-        function goHome() {
-            document.getElementById('mainScreen').style.display = 'flex';
-            document.getElementById('mainContainer').classList.remove('active');
-            document.getElementById('topNav').classList.remove('active');
-            document.getElementById('bottomNav').classList.remove('active');
-        }
-
-        // 섹션 전환
-        function showSection(sectionName) {
-            // 모든 섹션 숨기기
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // 모든 네비 아이템 비활성화
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // 선택된 섹션 보이기
-            document.getElementById(sectionName).classList.add('active');
-            
-            // 해당 네비 아이템 활성화
-            event.target.closest('.nav-item').classList.add('active');
-            
-            // 특정 섹션별 추가 로직
-            if (sectionName === 'friends') {
-                updateThisMonthBirthdays();
-                updateFunStats();
-            }
-        }
-
-        // 친구 데이터 초기화
-        function initializeFriends() {
-            if (friendsData.length === 0) {
-                const realFriends = [
-                    { id: 1, nickname: 'YSN JOKER', emoji: '🃏', realName: '강정현', birthday: '0807' },
-                    { id: 2, nickname: '복쿠레', emoji: '🎲', realName: '복지현', birthday: '0115' },
-                    { id: 3, nickname: '각해킹(숙주)', emoji: '🦠', realName: '곽도윤', birthday: '0731' },
-                    { id: 4, nickname: '노소맨', emoji: '🎯', realName: '심재현', birthday: '1005' },
-                    { id: 5, nickname: '쾌걸근육맨', emoji: '💪', realName: '양규현', birthday: '0419' },
-                    { id: 6, nickname: '26년 4월', emoji: '📅', realName: '이학준', birthday: '0222' },
-                    { id: 7, nickname: '희준아 너만 믿는다', emoji: '🙏', realName: '한희준', birthday: '1221' },
-                    { id: 8, nickname: '누구세요', emoji: '❓', realName: '전상혁', birthday: '0818' },
-                    { id: 9, nickname: '미나리', emoji: '🌿', realName: '양정후', birthday: '1018' },
-                    { id: 10, nickname: '황대표', emoji: '👔', realName: '황승하', birthday: '0711' },
-                    { id: 11, nickname: '철구', emoji: '🔩', realName: '이서현', birthday: '0124' },
-                    { id: 12, nickname: '강순건', emoji: '🏗️', realName: '강순건', birthday: '0418' },
-                    { id: 13, nickname: '윤희태', emoji: '🌟', realName: '윤희태', birthday: '0115' },
-                    { id: 14, nickname: '박주호', emoji: '⚽', realName: '박주호', birthday: '0601' },
-                    { id: 15, nickname: '신민호', emoji: '🎭', realName: '신민호', birthday: '0303' }
-                ];
-                
-                friendsData = realFriends;
-                saveData(); // 데이터 저장
-            }
-            
-            loadFriends();
-            generateFriendSelector();
-            updateSelects();
-            updateNextBirthday();
-        }
-
-        // 친구 목록 로드
-        function loadFriends() {
-            const container = document.getElementById('friendsList');
-            container.innerHTML = '';
-            
-            friendsData.forEach(friend => {
-                const friendElement = document.createElement('div');
-                friendElement.className = 'friend-item';
-                friendElement.onclick = () => showFriendDetails(friend.id);
-                
-                // 생일까지 남은 일수 계산
-                const daysUntilBirthday = getDaysUntilBirthday(friend.birthday);
-                
-                friendElement.innerHTML = `
-                    <span class="friend-emoji">${friend.emoji}</span>
-                    <div class="friend-name">${friend.nickname}</div>
-                    <div class="friend-status">생일까지 ${daysUntilBirthday}일</div>
-                `;
-                
-                container.appendChild(friendElement);
-            });
-        }
-
-        // 생일까지 남은 일수 계산
-        function getDaysUntilBirthday(birthday) {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const month = parseInt(birthday.substring(0, 2)) - 1; // 0-based month
-            const day = parseInt(birthday.substring(2, 4));
-            
-            let birthdayThisYear = new Date(currentYear, month, day);
-            
-            // 올해 생일이 지났으면 내년 생일로 계산
-            if (birthdayThisYear < today) {
-                birthdayThisYear = new Date(currentYear + 1, month, day);
-            }
-            
-            const diffTime = birthdayThisYear - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            return diffDays;
-        }
-
-        // 다음 생일 업데이트
-        function updateNextBirthday() {
-            const nextBirthdayContainer = document.getElementById('nextBirthday');
-            
-            // 모든 친구들의 생일까지 남은 일수 계산
-            const birthdayList = friendsData.map(friend => ({
-                ...friend,
-                daysUntil: getDaysUntilBirthday(friend.birthday)
-            })).sort((a, b) => a.daysUntil - b.daysUntil);
-            
-            const nextBirthday = birthdayList[0];
-            
-            if (nextBirthday.daysUntil === 0) {
-                nextBirthdayContainer.innerHTML = `🎉 오늘은 ${nextBirthday.nickname}의 생일! 🎂`;
-                nextBirthdayContainer.style.color = '#ff6b6b';
-                nextBirthdayContainer.style.fontWeight = '600';
-            } else {
-                nextBirthdayContainer.innerHTML = `🎂 다음 생일: ${nextBirthday.nickname} (${nextBirthday.daysUntil}일 후)`;
-            }
-        }
-
-        // 이번달 생일자 업데이트
-        function updateThisMonthBirthdays() {
-            const container = document.getElementById('thisMonthBirthdays');
-            const currentMonth = new Date().getMonth() + 1; // 1-based month
-            
-            const thisMonthBirthdays = friendsData.filter(friend => {
-                const friendMonth = parseInt(friend.birthday.substring(0, 2));
-                return friendMonth === currentMonth;
-            });
-            
-            if (thisMonthBirthdays.length === 0) {
-                container.innerHTML = '<p style="text-align: center; margin: 0;">이번달에는 생일자가 없어요! 🎈</p>';
-            } else {
-                container.innerHTML = thisMonthBirthdays.map(friend => {
-                    const day = parseInt(friend.birthday.substring(2, 4));
-                    const daysUntil = getDaysUntilBirthday(friend.birthday);
-                    return `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                            <span>${friend.emoji} ${friend.nickname}</span>
-                            <span>${currentMonth}월 ${day}일 ${daysUntil === 0 ? '(오늘!)' : `(${daysUntil}일 후)`}</span>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-
-        // 재미난 통계 업데이트
-        function updateFunStats() {
-            const container = document.getElementById('funStats');
-            
-            const stats = [
-                `🍻 총 술자리 횟수: ${drinkLogs.length}회`,
-                `📸 업로드된 사진: ${votePhotos.length + friendPhotos.length}장`,
-                `💬 명언 모음: ${quotes.length}개`,
-                `🎂 평균 나이: ${calculateAverageAge()}세`,
-                `🏆 최다 술친구: ${getMostDrinkingFriend()}`
-            ];
-            
-            container.innerHTML = stats.map(stat => 
-                `<div style="padding: 8px 0; border-bottom: 1px solid #eee;">${stat}</div>`
-            ).join('');
-        }
-
-        // 평균 나이 계산 (대략적으로)
-        function calculateAverageAge() {
-            // 생년을 대략적으로 추정 (01년생 = 2001년생으로 가정)
-            const ages = friendsData.map(friend => {
-                const birthYear = parseInt(friend.birthday.substring(0, 2));
-                const year = birthYear < 50 ? 2000 + birthYear : 1900 + birthYear;
-                return new Date().getFullYear() - year;
-            });
-            
-            return Math.round(ages.reduce((sum, age) => sum + age, 0) / ages.length);
-        }
-
-        // 최다 술친구 찾기
-        function getMostDrinkingFriend() {
-            if (drinkLogs.length === 0) return "아직 없음";
-            
-            const drinkCounts = {};
-            drinkLogs.forEach(log => {
-                log.participants.forEach(friendId => {
-                    drinkCounts[friendId] = (drinkCounts[friendId] || 0) + 1;
-                });
-            });
-            
-            const topDrinkerId = Object.keys(drinkCounts).reduce((a, b) => 
-                drinkCounts[a] > drinkCounts[b] ? a : b
-            );
-            
-            const topDrinker = friendsData.find(f => f.id == topDrinkerId);
-            return topDrinker ? `${topDrinker.nickname} (${drinkCounts[topDrinkerId]}회)` : "아직 없음";
-        }
-
-        // 랜덤 친구 뽑기
-        function pickRandomFriend() {
-            const randomFriend = friendsData[Math.floor(Math.random() * friendsData.length)];
-            document.getElementById('randomFriend').textContent = randomFriend.emoji;
-            document.getElementById('randomFriendName').textContent = `오늘 술값 낼 호구: ${randomFriend.nickname} ㅋㅋㅋ`;
-        }
-
-        // 운세 보기
-        function getFortune() {
-            const selectedFriendId = document.getElementById('fortuneSelect').value;
-            if (!selectedFriendId) {
-                alert('친구를 선택해주세요!');
-                return;
-            }
-            
-            const friend = friendsData.find(f => f.id == selectedFriendId);
-            const fortunes = [
-                '오늘은 술자리에서 개씨부랄 터질 예정! 🍻',
-                '친구들한테 개놀림 당할 각오 하세요 ㅋㅋ 😂',
-                '사진 찍을 때 개멍청한 표정 나올 예정 📸',
-                '오늘은 집에서 개처럼 자는 게 좋겠어요... 🏠',
-                '개씨부랄 명언이 탄생할 예감! 💬',
-                '치킨 먹고 개배부를 날 ㅋㅋ 🍗',
-                '친구들에게 개인기 보여줄 예정! 🔥',
-                '개재밌는 일이 일어날 것 같아요! 🎉',
-                '오늘은 개조용히 지내세요... 😅',
-                '개럭키한 하루가 될 거예요! 🍀',
-                '개망한 하루가 될 수도... 😱',
-                '술 마시고 개취할 예정 🤮'
-            ];
-            
-            const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
-            const fortuneContainer = document.getElementById('fortuneResult');
-            
-            fortuneContainer.innerHTML = `
-                <div style="font-size: 2rem; margin-bottom: 10px;">${friend.emoji}</div>
-                <div style="font-weight: 600; margin-bottom: 10px;">${friend.nickname}의 개씨부랄 운세</div>
-                <div style="font-size: 1.1rem; color: #666;">${randomFortune}</div>
-            `;
-            fortuneContainer.style.display = 'block';
-        }
-
-        // 밸런스 게임
-        function startBalanceGame() {
-            const games = [
-                ['🍺 맥주 vs 🍶 소주', '맥주', '소주'],
-                ['🏠 집 vs 🎉 클럽', '집콕', '클럽'],
-                ['🍗 치킨 vs 🍕 피자', '치킨', '피자'],
-                ['😴 일찍 자기 vs 🌙 올나이트', '일찍 자기', '올나이트'],
-                ['💰 돈 vs ❤️ 사랑', '돈', '사랑'],
-                ['☀️ 여름 vs ❄️ 겨울', '여름', '겨울'],
-                ['🎮 게임 vs 📺 영화', '게임', '영화'],
-                ['🚗 드라이브 vs 🚶 산책', '드라이브', '산책'],
-                ['🤮 토하면서 마시기 vs 😴 술 안마시기', '토하면서 마시기', '술 안마시기'],
-                ['💩 똥 vs 🤮 토', '똥', '토'],
-                ['🔥 개씨부랄 vs 😇 점잖게', '개씨부랄', '점잖게']
-            ];
-            
-            const randomGame = games[Math.floor(Math.random() * games.length)];
-            const gameContainer = document.getElementById('balanceGame');
-            
-            gameContainer.innerHTML = `
-                <h4 style="margin-bottom: 20px; color: #333;">${randomGame[0]}</h4>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button class="btn btn-primary" onclick="selectBalance('${randomGame[1]}')" style="flex: 1; max-width: 120px;">${randomGame[1]}</button>
-                    <button class="btn btn-secondary" onclick="selectBalance('${randomGame[2]}')" style="flex: 1; max-width: 120px;">${randomGame[2]}</button>
-                </div>
-                <div id="balanceResult" style="margin-top: 15px; font-size: 0.9rem; color: #666;"></div>
-            `;
-        }
-
-        // 밸런스 게임 선택
-        function selectBalance(choice) {
-            const messages = [
-                `${choice} 선택! 개씨부랄 센스 있네요! 👍`,
-                `${choice}를 고르다니... 개예상했어요! 😄`,
-                `${choice} 파이터시군요! 개씨부랄! 🔥`,
-                `${choice}... 개그럴 줄 알았어요! 😏`,
-                `개씨부랄 ${choice} 고르는 센스 ㅋㅋ 🤣`
-            ];
-            
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            document.getElementById('balanceResult').textContent = randomMessage;
-            
-            setTimeout(() => {
-                document.getElementById('balanceGame').innerHTML = '<button class="btn btn-primary" onclick="startBalanceGame()">🎯 개씨부랄 밸런스 게임 시작!</button>';
-            }, 3000);
-        }킨', '피자'],
-                ['😴 일찍 자기 vs 🌙 올나이트', '일찍 자기', '올나이트'],
-                ['💰 돈 vs ❤️ 사랑', '돈', '사랑'],
-                ['☀️ 여름 vs ❄️ 겨울', '여름', '겨울'],
-                ['🎮 게임 vs 📺 영화', '게임', '영화'],
-                ['🚗 드라이브 vs 🚶 산책', '드라이브', '산책']
-            ];
-            
-            const randomGame = games[Math.floor(Math.random() * games.length)];
-            const gameContainer = document.getElementById('balanceGame');
-            
-            gameContainer.innerHTML = `
-                <h4 style="margin-bottom: 20px; color: #333;">${randomGame[0]}</h4>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button class="btn btn-primary" onclick="selectBalance('${randomGame[1]}')" style="flex: 1; max-width: 120px;">${randomGame[1]}</button>
-                    <button class="btn btn-secondary" onclick="selectBalance('${randomGame[2]}')" style="flex: 1; max-width: 120px;">${randomGame[2]}</button>
-                </div>
-                <div id="balanceResult" style="margin-top: 15px; font-size: 0.9rem; color: #666;"></div>
-            `;
-        }
-
-        // 밸런스 게임 선택
-        function selectBalance(choice) {
-            const messages = [
-                `${choice} 선택! 역시 센스 있네요! 👍`,
-                `${choice}를 고르다니... 예상했어요! 😄`,
-                `${choice} 파이터시군요! 🔥`,
-                `${choice}... 그럴 줄 알았어요! 😏`
-            ];
-            
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            document.getElementById('balanceResult').textContent = randomMessage;
-            
-            setTimeout(() => {
-                document.getElementById('balanceGame').innerHTML = '<button class="btn btn-primary" onclick="startBalanceGame()">🎯 새로운 밸런스 게임 시작!</button>';
-            }, 3000);
-        }
-
-        // 친구별 술친구 횟수 계산
-        function getDrinkCountForFriend(friendId) {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            return drinkLogs.filter(log => {
-                const logDate = new Date(log.date);
-                return logDate.getMonth() === currentMonth && 
-                       logDate.getFullYear() === currentYear &&
-                       log.participants.includes(friendId);
-            }).length;
-        }
-
-        // 친구 선택기 생성
-        function generateFriendSelector() {
-            const container = document.getElementById('friendSelector');
-            container.innerHTML = '';
-            
-            friendsData.forEach(friend => {
-                const friendOption = document.createElement('div');
-                friendOption.className = 'friend-checkbox';
-                friendOption.onclick = () => toggleFriendSelection(friend.id);
-                
-                friendOption.innerHTML = `
-                    <input type="checkbox" id="friend_${friend.id}" value="${friend.id}">
-                    <span class="emoji">${friend.emoji}</span>
-                    <span class="name">${friend.nickname}</span>
-                `;
-                
-                container.appendChild(friendOption);
-            });
-        }
-
-        // 친구 선택 토글
-        function toggleFriendSelection(friendId) {
-            const checkbox = document.getElementById(`friend_${friendId}`);
-            const container = checkbox.parentElement;
-            
-            checkbox.checked = !checkbox.checked;
-            container.classList.toggle('selected', checkbox.checked);
-        }
-
-        // 셀렉트 박스 업데이트
-        function updateSelects() {
-            const selects = ['quoteSpeaker', 'friendPhotoSelect', 'selectedFriendForPhoto', 'fortuneSelect'];
-            
-            selects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (!select) return;
-                
-                const currentValue = select.value;
-                
-                // 기존 옵션 제거 (첫 번째 옵션 제외)
-                while(select.children.length > 1) {
-                    select.removeChild(select.lastChild);
-                }
-                
-                // 친구들 추가
-                friendsData.forEach(friend => {
-                    const option = document.createElement('option');
-                    option.value = friend.id;
-                    option.textContent = friend.nickname;
-                    select.appendChild(option);
-                });
-                
-                select.value = currentValue;
-            });
-        }
-
-        // 투표 갤러리 사진 모달 열기
-        function openGalleryPhotoModal() {
-            document.getElementById('galleryPhotoModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 투표 갤러리 사진 모달 닫기
-        function closeGalleryPhotoModal() {
-            document.getElementById('galleryPhotoModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            resetVotePhotoForm();
-        }
-
-        // 투표 사진 폼 리셋
-        function resetVotePhotoForm() {
-            document.getElementById('galleryPhotoTitle').value = '';
-            document.getElementById('votePhoto').value = '';
-            document.getElementById('votePhotoPreview').classList.add('hidden');
-        }
-
-        // 투표 사진 미리보기
-        function previewVotePhoto() {
-            const file = document.getElementById('votePhoto').files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('votePhotoImg').src = e.target.result;
-                    document.getElementById('votePhotoPreview').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // 투표 사진 추가
-        function addVotePhoto() {
-            const title = document.getElementById('galleryPhotoTitle').value;
-            const photoFile = document.getElementById('votePhoto').files[0];
-            
-            if (!title || !photoFile) {
-                alert('제목과 사진을 입력해주세요!');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const newVotePhoto = {
-                    id: Date.now(),
-                    title: title,
-                    photo: e.target.result,
-                    votes: 0,
-                    voters: [], // 중복 투표 방지
-                    timestamp: new Date().toISOString()
-                };
-                
-                votePhotos.unshift(newVotePhoto);
-                saveData();
-                
-                loadVoteGallery();
-                closeGalleryPhotoModal();
-            };
-            reader.readAsDataURL(photoFile);
-        }
-
-        // 투표 갤러리 로드
-        function loadVoteGallery() {
-            const container = document.getElementById('voteGallery');
-            container.innerHTML = '';
-            
-            if (votePhotos.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">투표할 사진이 없어요! 첫 사진을 올려보세요 📸</p>';
-                return;
-            }
-            
-            // 투표순으로 정렬
-            const sortedPhotos = [...votePhotos].sort((a, b) => b.votes - a.votes);
-            
-            sortedPhotos.forEach((photo, index) => {
-                const photoElement = document.createElement('div');
-                photoElement.className = 'drink-log';
-                photoElement.style.background = index === 0 ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                photoElement.style.color = 'white';
-                photoElement.style.position = 'relative';
-                
-                photoElement.innerHTML = `
-                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem; z-index: 10;" onclick="deleteVotePhoto(${photo.id})" title="삭제">✕</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-right: 45px;">
-                        <h4 style="margin: 0;">${index + 1}위. ${photo.title}</h4>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-weight: 600;">❤️ ${photo.votes}</span>
-                            <button onclick="votePhoto(${photo.id})" style="background: rgba(255,255,255,0.2); border: none; border-radius: 15px; padding: 5px 12px; color: white; font-size: 0.8rem; cursor: pointer;">투표</button>
-                        </div>
-                    </div>
-                    <img src="${photo.photo}" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 10px; cursor: pointer;" onclick="viewPhoto('${photo.photo}', '${photo.title}')">
-                    <div style="text-align: right; font-size: 0.7rem; opacity: 0.8; margin-top: 5px;">
-                        ${new Date(photo.timestamp).toLocaleDateString('ko-KR')}
-                    </div>
-                `;
-                
-                container.appendChild(photoElement);
-            });
-        }
-
-        // 투표 사진 삭제
-        function deleteVotePhoto(photoId) {
-            if (confirm('정말 이 투표 사진을 삭제하시겠어요?')) {
-                votePhotos = votePhotos.filter(photo => photo.id !== photoId);
-                saveData();
-                loadVoteGallery();
-            }
-        }
-
-        // 사진 투표
-        function votePhoto(photoId) {
-            const photo = votePhotos.find(p => p.id === photoId);
-            if (photo) {
-                // 간단한 중복 투표 방지 (실제로는 사용자 ID 기반으로 해야 함)
-                const voterId = 'user1'; // 임시 사용자 ID
-                if (photo.voters.includes(voterId)) {
-                    alert('이미 투표하셨습니다!');
-                    return;
-                }
-                
-                photo.votes += 1;
-                photo.voters.push(voterId);
-                saveData();
-                loadVoteGallery();
-            }
-        }
-
-        // 친구 사진 모달 열기
-        function openFriendPhotoModal() {
-            const selectedFriend = document.getElementById('friendPhotoSelect').value;
-            if (!selectedFriend) {
-                alert('먼저 친구를 선택해주세요!');
-                return;
-            }
-            
-            document.getElementById('selectedFriendForPhoto').value = selectedFriend;
-            document.getElementById('friendPhotoModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 친구 사진 모달 닫기
-        function closeFriendPhotoModal() {
-            document.getElementById('friendPhotoModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            resetFriendPhotoForm();
-        }
-
-        // 친구 사진 폼 리셋
-        function resetFriendPhotoForm() {
-            document.getElementById('friendPhotoTitle').value = '';
-            document.getElementById('friendPhoto').value = '';
-            document.getElementById('friendPhotoPreview').classList.add('hidden');
-        }
-
-        // 친구 사진 미리보기
-        function previewFriendPhoto() {
-            const file = document.getElementById('friendPhoto').files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('friendPhotoImg').src = e.target.result;
-                    document.getElementById('friendPhotoPreview').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // 친구 사진 추가
-        function addFriendPhoto() {
-            const friendId = document.getElementById('selectedFriendForPhoto').value;
-            const title = document.getElementById('friendPhotoTitle').value;
-            const photoFile = document.getElementById('friendPhoto').files[0];
-            
-            if (!friendId || !title || !photoFile) {
-                alert('모든 정보를 입력해주세요!');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const newFriendPhoto = {
-                    id: Date.now(),
-                    friendId: parseInt(friendId),
-                    title: title,
-                    photo: e.target.result,
-                    timestamp: new Date().toISOString()
-                };
-                
-                friendPhotos.unshift(newFriendPhoto);
-                saveData();
-                
-                loadFriendPhotos();
-                closeFriendPhotoModal();
-            };
-            reader.readAsDataURL(photoFile);
-        }
-
-        // 친구 사진들 로드
-        function loadFriendPhotos() {
-            const selectedFriend = document.getElementById('friendPhotoSelect')?.value;
-            const container = document.getElementById('friendPhotoGallery');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            if (!selectedFriend) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">친구를 선택해주세요!</p>';
-                return;
-            }
-            
-            const friendFacePhotos = friendPhotos.filter(photo => photo.friendId == selectedFriend);
-            
-            if (friendFacePhotos.length === 0) {
-                const friend = friendsData.find(f => f.id == selectedFriend);
-                container.innerHTML = `<p style="text-align: center; color: #999; padding: 20px;">${friend?.nickname}의 사진이 없어요!</p>`;
-                return;
-            }
-            
-            const gridContainer = document.createElement('div');
-            gridContainer.className = 'photo-grid';
-            
-            friendFacePhotos.forEach(photo => {
-                const photoElement = document.createElement('div');
-                photoElement.className = 'photo-item';
-                photoElement.style.position = 'relative';
-                
-                photoElement.innerHTML = `
-                    <img src="${photo.photo}" alt="${photo.title}" onclick="viewPhoto('${photo.photo}', '${photo.title}')">
-                    <div style="position: absolute; top: 5px; right: 5px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem;" onclick="deleteFriendPhoto(${photo.id})" title="삭제">✕</div>
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 5px; font-size: 0.7rem; text-align: center;">${photo.title}</div>
-                `;
-                gridContainer.appendChild(photoElement);
-            });
-            
-            container.appendChild(gridContainer);
-        }
-
-        // 친구 사진 삭제
-        function deleteFriendPhoto(photoId) {
-            if (confirm('정말 이 사진을 삭제하시겠어요?')) {
-                friendPhotos = friendPhotos.filter(photo => photo.id !== photoId);
-                saveData();
-                loadFriendPhotos();
-            }
-        }
-
-        // 친구 선택시 사진 로드
-        function loadSelectedFriendPhotos() {
-            loadFriendPhotos();
-        }
-
-        // 기존 함수들 업데이트
-
-        // 술친구 모달 열기
-        function openDrinkModal() {
-            document.getElementById('drinkModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 술친구 모달 닫기
-        function closeDrinkModal() {
-            document.getElementById('drinkModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            resetDrinkForm();
-        }
-
-        // 술친구 폼 리셋
-        function resetDrinkForm() {
-            document.getElementById('drinkDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('drinkMemo').value = '';
-            document.getElementById('drinkPhoto').value = '';
-            document.getElementById('drinkPhotoPreview').classList.add('hidden');
-            
-            // 친구 선택 리셋
-            document.querySelectorAll('.friend-checkbox').forEach(item => {
-                item.classList.remove('selected');
-                item.querySelector('input').checked = false;
-            });
-        }
-
-        // 술친구 사진 미리보기
-        function previewDrinkPhoto() {
-            const file = document.getElementById('drinkPhoto').files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('drinkPhotoImg').src = e.target.result;
-                    document.getElementById('drinkPhotoPreview').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // 술친구 기록 추가
-        function addDrinkLog() {
-            const date = document.getElementById('drinkDate').value;
-            const memo = document.getElementById('drinkMemo').value;
-            const selectedFriends = Array.from(document.querySelectorAll('.friend-checkbox.selected input'))
-                .map(input => parseInt(input.value));
-            
-            if (!date || selectedFriends.length === 0) {
-                alert('날짜와 친구를 선택해주세요!');
-                return;
-            }
-            
-            const photoFile = document.getElementById('drinkPhoto').files[0];
-            let photoData = null;
-            
-            if (photoFile) {
-                // 실제 앱에서는 서버에 업로드하겠지만, 지금은 base64로 저장
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    photoData = e.target.result;
-                    saveDrinkLog();
-                };
-                reader.readAsDataURL(photoFile);
-            } else {
-                saveDrinkLog();
-            }
-            
-            function saveDrinkLog() {
-                const newLog = {
-                    id: Date.now(),
-                    date: date,
-                    participants: selectedFriends,
-                    memo: memo,
-                    photo: photoData,
-                    timestamp: new Date().toISOString()
-                };
-                
-                drinkLogs.unshift(newLog);
-                saveData(); // localStorage 대신 saveData 함수 사용
-                
-                loadDrinkLogs();
-                updateRanking();
-                loadFriends();
-                updateThisMonthBirthdays();
-                updateFunStats();
-                closeDrinkModal();
-            }
-        }
-
-        // 술친구 로그 로드
-        function loadDrinkLogs() {
-            const container = document.getElementById('drinkLogs');
-            container.innerHTML = '';
-            
-            if (drinkLogs.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">아직 술친구 기록이 없어요! 첫 기록을 남겨보세요 🍻</p>';
-                return;
-            }
-            
-            drinkLogs.slice(0, 10).forEach(log => {
-                const logElement = document.createElement('div');
-                logElement.className = 'drink-log';
-                logElement.style.position = 'relative';
-                
-                const participants = log.participants.map(id => {
-                    const friend = friendsData.find(f => f.id === id);
-                    return friend ? friend.nickname : '알 수 없음';
-                });
-                
-                logElement.innerHTML = `
-                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; z-index: 10;" onclick="deleteDrinkLog(${log.id})" title="삭제">✕</div>
-                    <div class="drink-date">${new Date(log.date).toLocaleDateString('ko-KR', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        weekday: 'short'
-                    })}</div>
-                    <div class="drink-participants">
-                        ${participants.map(name => `<span class="participant-tag">${name}</span>`).join('')}
-                    </div>
-                    ${log.memo ? `<div style="margin-top: 8px; font-size: 0.9rem; padding-right: 30px;">${log.memo}</div>` : ''}
-                    ${log.photo ? `<img src="${log.photo}" class="drink-photo" onclick="viewPhoto('${log.photo}')">` : ''}
-                `;
-                
-                container.appendChild(logElement);
-            });
-        }
-
-        // 술친구 로그 삭제
-        function deleteDrinkLog(logId) {
-            if (confirm('정말 이 술친구 기록을 삭제하시겠어요?')) {
-                drinkLogs = drinkLogs.filter(log => log.id !== logId);
-                saveData();
-                loadDrinkLogs();
-                updateRanking();
-                loadFriends();
-            }
-        }
-
-        // 랭킹 업데이트
-        function updateRanking() {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            // 친구별 술친구 횟수 계산
-            const drinkCounts = friendsData.map(friend => {
-                const count = getDrinkCountForFriend(friend.id);
-                return {
-                    friend: friend,
-                    count: count
-                };
-            }).sort((a, b) => b.count - a.count);
-            
-            // 랭킹 표시
-            const container = document.getElementById('drinkingRanking');
-            container.innerHTML = '';
-            
-            drinkCounts.slice(0, 5).forEach((item, index) => {
-                const rankElement = document.createElement('div');
-                rankElement.className = 'ranking-item';
-                
-                const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-                
-                rankElement.innerHTML = `
-                    <div class="rank-number">${index + 1}</div>
-                    <div class="rank-emoji">${item.friend.emoji}</div>
-                    <div class="rank-info">
-                        <div class="rank-name">${item.friend.nickname}</div>
-                        <div class="rank-count">이번달 ${item.count}회</div>
-                    </div>
-                    <div style="font-size: 1.5rem;">${medals[index] || '🏅'}</div>
-                `;
-                
-                container.appendChild(rankElement);
-            });
-            
-            // 통계 업데이트
-            const topCount = drinkCounts[0] ? drinkCounts[0].count : 0;
-            document.getElementById('topDrinkerCount').textContent = topCount;
-            
-            // 내 음주 횟수는 임의로 첫 번째 친구로 설정 (실제로는 사용자 설정 필요)
-            document.getElementById('myDrinkCount').textContent = drinkCounts[0] ? drinkCounts[0].count : 0;
-        }
-
-        // 사진 모달 열기
-        function openPhotoModal() {
-            document.getElementById('photoModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 사진 모달 닫기
-        function closePhotoModal() {
-            document.getElementById('photoModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            resetPhotoForm();
-        }
-
-        // 사진 폼 리셋
-        function resetPhotoForm() {
-            document.getElementById('photoTitle').value = '';
-            document.getElementById('photoFriendSelect').value = '';
-            document.getElementById('galleryPhoto').value = '';
-            document.getElementById('galleryPhotoPreview').classList.add('hidden');
-        }
-
-        // 갤러리 사진 미리보기
-        function previewGalleryPhoto() {
-            const file = document.getElementById('galleryPhoto').files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('galleryPhotoImg').src = e.target.result;
-                    document.getElementById('galleryPhotoPreview').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // 사진 추가
-        function addPhoto() {
-            const title = document.getElementById('photoTitle').value;
-            const friendId = document.getElementById('photoFriendSelect').value;
-            const photoFile = document.getElementById('galleryPhoto').files[0];
-            
-            if (!title || !photoFile) {
-                alert('제목과 사진을 입력해주세요!');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const newPhoto = {
-                    id: Date.now(),
-                    title: title,
-                    friendId: friendId ? parseInt(friendId) : null,
-                    photo: e.target.result,
-                    timestamp: new Date().toISOString()
-                };
-                
-                photos.unshift(newPhoto);
-                saveData(); // localStorage 대신 saveData 함수 사용
-                
-                loadPhotos();
-                closePhotoModal();
-            };
-            reader.readAsDataURL(photoFile);
-        }
-
-        // 사진 로드
-        function loadPhotos() {
-            const container = document.getElementById('photoGrid');
-            container.innerHTML = '';
-            
-            const selectedFriend = document.getElementById('galleryFriendSelect')?.value;
-            const filteredPhotos = selectedFriend ? 
-                photos.filter(photo => photo.friendId == selectedFriend) : 
-                photos;
-            
-            if (filteredPhotos.length === 0) {
-                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 20px;">사진이 없어요!</p>';
-                return;
-            }
-            
-            filteredPhotos.forEach(photo => {
-                const photoElement = document.createElement('div');
-                photoElement.className = 'photo-item';
-                photoElement.onclick = () => viewPhoto(photo.photo, photo.title);
-                
-                photoElement.innerHTML = `<img src="${photo.photo}" alt="${photo.title}">`;
-                container.appendChild(photoElement);
-            });
-        }
-
-        // 친구 갤러리 로드
-        function loadFriendGallery() {
-            loadPhotos();
-        }
-
-        // 사진 크게 보기
-        function viewPhoto(photoSrc, title = '') {
-            // 간단한 사진 뷰어 (모달로 구현 가능)
-            const newWindow = window.open('', '_blank');
-            newWindow.document.write(`
-                <html>
-                    <head><title>${title}</title></head>
-                    <body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center; min-height:100vh;">
-                        <img src="${photoSrc}" style="max-width:100%; max-height:100vh; object-fit:contain;">
-                    </body>
-                </html>
-            `);
-        }
-
-        // 명언 모달 열기
-        function openQuoteModal() {
-            document.getElementById('quoteModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 명언 모달 닫기
-        function closeQuoteModal() {
-            document.getElementById('quoteModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-            resetQuoteForm();
-        }
-
-        // 명언 폼 리셋
-        function resetQuoteForm() {
-            document.getElementById('quoteText').value = '';
-            document.getElementById('quoteSpeaker').value = '';
-        }
-
-        // 명언 추가
-        function addQuote() {
-            const text = document.getElementById('quoteText').value;
-            const speakerId = document.getElementById('quoteSpeaker').value;
-            
-            if (!text || !speakerId) {
-                alert('명언과 발언자를 입력해주세요!');
-                return;
-            }
-            
-            const speaker = friendsData.find(f => f.id == speakerId);
-            
-            const newQuote = {
-                id: Date.now(),
-                text: text,
-                speaker: speaker.nickname,
-                speakerId: speakerId,
-                timestamp: new Date().toISOString()
-            };
-            
-            quotes.unshift(newQuote);
-            saveData(); // localStorage 대신 saveData 함수 사용
-            
-            loadQuotes();
-            closeQuoteModal();
-        }
-
-        // 명언 로드
-        function loadQuotes() {
-            const container = document.getElementById('quotesList');
-            container.innerHTML = '';
-            
-            if (quotes.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">아직 명언이 없어요! 첫 명언을 남겨보세요 💬</p>';
-                return;
-            }
-            
-            quotes.forEach(quote => {
-                const quoteElement = document.createElement('div');
-                quoteElement.className = 'drink-log';
-                quoteElement.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
-                quoteElement.style.color = 'white';
-                quoteElement.style.position = 'relative';
-                
-                quoteElement.innerHTML = `
-                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.8); color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; z-index: 10;" onclick="deleteQuote(${quote.id})" title="삭제">✕</div>
-                    <div style="font-style: italic; font-size: 1.1rem; margin-bottom: 10px; padding-right: 35px;">
-                        "${quote.text}"
-                    </div>
-                    <div style="text-align: right; font-weight: 600;">
-                        - ${quote.speaker}
-                    </div>
-                    <div style="text-align: right; font-size: 0.8rem; opacity: 0.8; margin-top: 5px;">
-                        ${new Date(quote.timestamp).toLocaleDateString('ko-KR')}
-                    </div>
-                `;
-                
-                container.appendChild(quoteElement);
-            });
-        }
-
-        // 명언 삭제
-        function deleteQuote(quoteId) {
-            if (confirm('정말 이 명언을 삭제하시겠어요?')) {
-                quotes = quotes.filter(quote => quote.id !== quoteId);
-                saveData();
-                loadQuotes();
-            }
-        }
-
-        // 친구 상세 정보 (추후 구현)
-        function showFriendDetails(friendId) {
-            const friend = friendsData.find(f => f.id === friendId);
-            alert(`${friend.nickname} (${friend.realName})\n이번달 술친구 횟수: ${getDrinkCountForFriend(friendId)}회`);
-        }
-
-        // 메뉴 토글 (추후 구현)
-        function toggleMenu() {
-            // 설정 메뉴 등 추가 기능
-            alert('추가 기능은 곧 업데이트 예정입니다!');
-        }
-
-        // 모달 외부 클릭시 닫기
-        window.onclick = function(event) {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }
-            });
-        }
+        // 디버깅용
+        console.log('🔥 스크립트 로드 완료!');
     </script>
 </body>
 </html>
