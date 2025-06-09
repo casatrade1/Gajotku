@@ -115,11 +115,21 @@
             min-height: 100vh;
         }
 
+        /* 생일 알림 띠 */
+        .birthday-banner {
+            background: #262626;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
         /* 헤더 */
         .header {
             background: white;
             border-bottom: 1px solid #dbdbdb;
-            padding: 15px 20px;
+            padding: 10px 16px;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -131,46 +141,57 @@
         .header-title {
             font-size: 24px;
             font-weight: bold;
+            font-family: 'Billabong', cursive;
         }
 
-        .user-info {
-            font-size: 14px;
-            color: #8e8e8e;
-        }
-
-        /* 네비게이션 */
-        .nav-tabs {
+        .header-icons {
             display: flex;
-            background: white;
-            border-bottom: 1px solid #dbdbdb;
-            overflow-x: auto;
+            gap: 16px;
         }
 
-        .nav-tab {
-            flex: 1;
-            padding: 15px 10px;
-            text-align: center;
-            border: none;
+        .icon-btn {
             background: none;
+            border: none;
+            font-size: 24px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            color: #8e8e8e;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            white-space: nowrap;
-            min-width: 80px;
+            padding: 4px;
         }
 
-        .nav-tab.active {
+        /* 네비게이션 바 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #262626;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
             color: #405de6;
-            border-bottom-color: #405de6;
         }
 
         /* 컨텐츠 영역 */
         .content {
-            padding: 20px;
-            min-height: calc(100vh - 120px);
+            padding-bottom: 60px; /* 하단 네비게이션 공간 */
+            min-height: calc(100vh - 100px);
         }
 
         .tab-content {
@@ -181,46 +202,241 @@
             display: block;
         }
 
-        /* 홈 피드 */
-        .feed-item {
+        /* 인스타 포스트 스타일 */
+        .post {
             background: white;
             border: 1px solid #dbdbdb;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            overflow: hidden;
+            margin-bottom: 16px;
         }
 
-        .feed-header {
-            padding: 15px;
+        .post-header {
+            padding: 12px 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .post-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-pic {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-info h4 {
+            font-size: 14px;
             font-weight: 600;
+            margin: 0;
         }
 
-        .feed-content {
-            padding: 0 15px 15px;
-        }
-
-        .feed-time {
+        .post-time {
+            font-size: 11px;
             color: #8e8e8e;
-            font-size: 12px;
-            margin-top: 5px;
         }
 
-        /* 랭킹 카드 */
+        .post-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .post-actions {
+            padding: 8px 16px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            color: #262626;
+            transition: all 0.2s;
+        }
+
+        .action-btn.liked {
+            color: #ed4956;
+        }
+
+        .post-likes {
+            padding: 0 16px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .post-content {
+            padding: 0 16px 12px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .post-content .username {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        /* 포스트 작성 */
+        .create-post {
+            background: white;
+            border: 1px solid #dbdbdb;
+            margin: 16px;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .create-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .create-input {
+            width: 100%;
+            border: none;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            min-height: 60px;
+            margin-bottom: 12px;
+        }
+
+        .create-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .attach-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #8e8e8e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .post-btn {
+            background: #405de6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .post-btn:disabled {
+            background: #c7c7c7;
+            cursor: not-allowed;
+        }
+
+        /* 이미지 프리뷰 */
+        .image-preview {
+            position: relative;
+            margin: 12px 0;
+        }
+
+        .preview-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .remove-img {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 포스트 타입 선택 */
+        .post-type {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #dbdbdb;
+            background: white;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .type-btn.active {
+            background: #405de6;
+            color: white;
+            border-color: #405de6;
+        }
+
+        .meeting-selector {
+            display: none;
+            margin-bottom: 12px;
+        }
+
+        .meeting-selector.active {
+            display: block;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        /* 랭킹 */
+        .ranking-section {
+            margin: 16px;
+        }
+
         .ranking-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 15px;
+            border-radius: 12px;
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .ranking-title {
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            text-align: center;
         }
 
         .ranking-item {
@@ -238,183 +454,130 @@
         .rank-position {
             font-weight: bold;
             font-size: 18px;
+            width: 30px;
         }
 
-        /* 입력 폼 */
-        .input-form {
-            background: white;
-            border: 1px solid #dbdbdb;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-
-        .form-row:last-child {
-            margin-bottom: 0;
-        }
-
-        select, input, textarea {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #dbdbdb;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .btn {
-            background: #405de6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background: #3449d1;
-        }
-
-        .btn-small {
-            padding: 8px 15px;
-            font-size: 12px;
-        }
-
-        .btn-danger {
-            background: #ed4956;
-        }
-
-        .btn-danger:hover {
-            background: #d63447;
-        }
-
-        /* 생일 카운트다운 */
-        .birthday-card {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            color: #333;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
+        /* 프로필 페이지 */
+        .profile-header {
+            padding: 20px 16px;
             text-align: center;
+            background: white;
+            border-bottom: 1px solid #dbdbdb;
         }
 
-        .birthday-name {
+        .profile-pic-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            margin: 0 auto 16px;
+        }
+
+        .profile-name {
             font-size: 20px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
-        .birthday-countdown {
-            font-size: 24px;
-            font-weight: bold;
-            color: #e91e63;
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
         }
 
-        /* 친구 목록 */
-        .friends-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .friend-stats-card {
-            background: white;
-            border: 1px solid #dbdbdb;
-            border-radius: 12px;
-            padding: 15px;
+        .stat-item {
             text-align: center;
         }
 
-        .friend-stats-name {
+        .stat-number {
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 10px;
+            display: block;
         }
 
-        .friend-stats {
+        .stat-label {
             font-size: 12px;
             color: #8e8e8e;
         }
 
-        /* 일기 목록 */
-        .diary-item {
-            background: white;
-            border: 1px solid #dbdbdb;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
         }
 
-        .diary-header {
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid #dbdbdb;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
         }
 
-        .diary-author {
+        .modal-title {
+            font-size: 16px;
             font-weight: bold;
         }
 
-        .diary-date {
-            color: #8e8e8e;
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 16px;
+        }
+
+        /* 삭제 버튼 */
+        .delete-btn {
+            color: #ed4956;
+            background: none;
+            border: none;
             font-size: 12px;
-        }
-
-        .diary-content {
-            line-height: 1.5;
-        }
-
-        /* 사진 갤러리 */
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .photo-item {
-            background: white;
-            border: 1px solid #dbdbdb;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .photo-img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-        }
-
-        .photo-info {
-            padding: 10px;
-        }
-
-        .photo-votes {
-            font-weight: bold;
-            color: #405de6;
+            cursor: pointer;
+            padding: 4px;
         }
 
         /* 반응형 */
         @media (max-width: 480px) {
-            .content {
-                padding: 15px;
-            }
-            
             .friend-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
-            .friends-grid {
-                grid-template-columns: 1fr;
-            }
+        }
+
+        /* 숨김 파일 입력 */
+        .hidden-file-input {
+            display: none;
         }
     </style>
 </head>
@@ -435,98 +598,103 @@
 
     <!-- 메인 앱 화면 -->
     <div id="mainApp" class="main-app">
+        <!-- 생일 알림 띠 -->
+        <div id="birthdayBanner" class="birthday-banner"></div>
+
         <!-- 헤더 -->
         <div class="header">
             <div class="header-title">가조쿠</div>
-            <div class="user-info" id="currentUser"></div>
-        </div>
-
-        <!-- 네비게이션 -->
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="home">🏠 홈</button>
-            <button class="nav-tab" data-tab="drink">🍻 술친구</button>
-            <button class="nav-tab" data-tab="friends">👥 가족들</button>
-            <button class="nav-tab" data-tab="meeting">💕 만남</button>
-            <button class="nav-tab" data-tab="diary">📝 일기</button>
-            <button class="nav-tab" data-tab="photos">📸 투표</button>
+            <div class="header-icons">
+                <button class="icon-btn" onclick="openCreateModal()">➕</button>
+                <button class="icon-btn" onclick="showProfile()">👤</button>
+            </div>
         </div>
 
         <!-- 컨텐츠 영역 -->
         <div class="content">
-            <!-- 홈 탭 -->
+            <!-- 홈 피드 -->
             <div id="home" class="tab-content active">
-                <div id="upcomingBirthday"></div>
-                <div id="todayMeetings"></div>
-                <div id="monthlyRankings"></div>
-                <div id="recentActivities"></div>
-            </div>
-
-            <!-- 술친구 탭 -->
-            <div id="drink" class="tab-content">
-                <div class="input-form">
-                    <h3 style="margin-bottom: 15px;">🍻 오늘 누구랑 술먹었나요?</h3>
-                    <div class="form-row">
-                        <select id="drinkPartner">
-                            <option value="">술친구 선택</option>
-                        </select>
-                        <button class="btn" onclick="addDrinkRecord()">기록하기</button>
+                <!-- 포스트 작성 -->
+                <div class="create-post">
+                    <div class="create-header">
+                        <div class="profile-pic" id="createProfilePic"></div>
+                        <div style="flex: 1;">
+                            <div class="post-type">
+                                <button class="type-btn active" data-type="diary" onclick="selectPostType('diary')">📝 일기</button>
+                                <button class="type-btn" data-type="meeting" onclick="selectPostType('meeting')">👥 만남</button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div id="drinkRanking"></div>
-                <div id="drinkHistory"></div>
-            </div>
-
-            <!-- 가족들 탭 -->
-            <div id="friends" class="tab-content">
-                <div id="nextBirthday"></div>
-                <div class="input-form">
-                    <h3 style="margin-bottom: 15px;">🎲 랜덤 호구 뽑기</h3>
-                    <button class="btn" onclick="randomPick()" style="width: 100%;">호구 뽑기!</button>
-                    <div id="randomResult" style="margin-top: 15px; text-align: center; font-size: 18px; font-weight: bold;"></div>
-                </div>
-                <div id="friendsStats"></div>
-            </div>
-
-            <!-- 만남 탭 -->
-            <div id="meeting" class="tab-content">
-                <div class="input-form">
-                    <h3 style="margin-bottom: 15px;">💕 오늘 누구 만났나요?</h3>
-                    <div class="form-row">
+                    
+                    <textarea class="create-input" id="postContent" placeholder="오늘 어떤 하루를 보내셨나요?"></textarea>
+                    
+                    <div class="meeting-selector" id="meetingSelector">
                         <select id="meetingPartner">
                             <option value="">만난 친구 선택</option>
                         </select>
-                        <button class="btn" onclick="addMeetingRecord()">기록하기</button>
                     </div>
+                    
+                    <div id="imagePreview"></div>
+                    
+                    <div class="create-actions">
+                        <button class="attach-btn" onclick="document.getElementById('imageInput').click()">
+                            📷 사진 첨부
+                        </button>
+                        <button class="post-btn" onclick="createPost()">게시</button>
+                    </div>
+                    
+                    <input type="file" id="imageInput" class="hidden-file-input" accept="image/*" onchange="previewImage(this)">
                 </div>
-                <div id="meetingRanking"></div>
-                <div id="meetingHistory"></div>
+
+                <!-- 포스트 피드 -->
+                <div id="postFeed"></div>
             </div>
 
-            <!-- 일기 탭 -->
-            <div id="diary" class="tab-content">
-                <div class="input-form">
-                    <h3 style="margin-bottom: 15px;">📝 오늘 하루 어땠나요?</h3>
-                    <div class="form-row">
-                        <textarea id="diaryText" placeholder="오늘의 일기를 써보세요..." rows="4"></textarea>
-                    </div>
-                    <div class="form-row">
-                        <button class="btn" onclick="addDiary()" style="width: 100%;">일기 쓰기</button>
-                    </div>
-                </div>
-                <div id="diaryList"></div>
+            <!-- 랭킹 탭 -->
+            <div id="ranking" class="tab-content">
+                <div class="ranking-section" id="rankingContent"></div>
             </div>
 
-            <!-- 투표 갤러리 탭 -->
-            <div id="photos" class="tab-content">
-                <div class="input-form">
-                    <h3 style="margin-bottom: 15px;">📸 사진 업로드 & 투표</h3>
-                    <div class="form-row">
-                        <input type="file" id="photoFile" accept="image/*">
-                        <button class="btn" onclick="uploadPhoto()">업로드</button>
+            <!-- 프로필 탭 -->
+            <div id="profile" class="tab-content">
+                <div class="profile-header">
+                    <div class="profile-pic-large" id="profilePicLarge"></div>
+                    <div class="profile-name" id="profileName"></div>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="postCount">0</span>
+                            <span class="stat-label">게시물</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="meetingCount">0</span>
+                            <span class="stat-label">만남</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="likeCount">0</span>
+                            <span class="stat-label">좋아요</span>
+                        </div>
                     </div>
                 </div>
-                <div id="photoGallery"></div>
+                <div id="myPosts"></div>
             </div>
+        </div>
+
+        <!-- 하단 네비게이션 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" data-tab="home" onclick="switchTab('home')">🏠</div>
+            <div class="nav-item" data-tab="ranking" onclick="switchTab('ranking')">🏆</div>
+            <div class="nav-item" data-tab="profile" onclick="switchTab('profile')">👤</div>
+        </div>
+    </div>
+
+    <!-- 좋아요 목록 모달 -->
+    <div id="likesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">좋아요</div>
+                <button class="close-btn" onclick="closeLikesModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="likesModalBody"></div>
         </div>
     </div>
 
@@ -552,12 +720,11 @@
 
         let currentUser = null;
         let selectedFriend = null;
+        let selectedPostType = 'diary';
+        let currentImageData = null;
 
         // 데이터 저장소
-        let drinkRecords = JSON.parse(localStorage.getItem('drinkRecords') || '[]');
-        let meetingRecords = JSON.parse(localStorage.getItem('meetingRecords') || '[]');
-        let diaryEntries = JSON.parse(localStorage.getItem('diaryEntries') || '[]');
-        let photoGallery = JSON.parse(localStorage.getItem('photoGallery') || '[]');
+        let posts = JSON.parse(localStorage.getItem('posts') || '[]');
 
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
@@ -576,25 +743,25 @@
         }
 
         function selectFriend(name) {
-            // 이전 선택 해제
             document.querySelectorAll('.friend-card').forEach(card => {
                 card.classList.remove('selected');
             });
 
-            // 새로운 선택
             const selectedCard = document.querySelector(`[data-name="${name}"]`);
             selectedCard.classList.add('selected');
             selectedFriend = name;
 
-            // 로그인 버튼 활성화
             document.getElementById('loginBtn').disabled = false;
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginBtn').addEventListener('click', login);
         }
 
         function login() {
             if (!selectedFriend) return;
             
             currentUser = selectedFriend;
-            document.getElementById('currentUser').textContent = currentUser;
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             
@@ -603,43 +770,40 @@
 
         function initializeApp() {
             setupSelectOptions();
-            renderHome();
-            renderDrinkTab();
-            renderFriendsTab();
-            renderMeetingTab();
-            renderDiaryTab();
-            renderPhotosTab();
+            updateProfilePics();
+            renderBirthdayBanner();
+            renderPostFeed();
+            renderRanking();
+            renderProfile();
         }
 
         function setupSelectOptions() {
-            const drinkSelect = document.getElementById('drinkPartner');
             const meetingSelect = document.getElementById('meetingPartner');
-            
             const options = friends
                 .filter(f => f.name !== currentUser)
                 .map(f => `<option value="${f.name}">${f.name}</option>`)
                 .join('');
             
-            drinkSelect.innerHTML = '<option value="">술친구 선택</option>' + options;
             meetingSelect.innerHTML = '<option value="">만난 친구 선택</option>' + options;
         }
 
-        function setupEventListeners() {
-            document.getElementById('loginBtn').addEventListener('click', login);
+        function updateProfilePics() {
+            const initials = currentUser.substring(0, 2);
+            document.getElementById('createProfilePic').textContent = initials;
+            document.getElementById('profilePicLarge').textContent = initials;
+            document.getElementById('profileName').textContent = currentUser;
+        }
 
-            // 탭 전환
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    const tabName = e.target.dataset.tab;
-                    switchTab(tabName);
-                });
-            });
+        function renderBirthdayBanner() {
+            const nextBirthday = getNextBirthday();
+            document.getElementById('birthdayBanner').innerHTML = 
+                `🎂 ${nextBirthday.name}님의 생일까지 ${nextBirthday.daysUntil}일 남았어요!`;
         }
 
         function switchTab(tabName) {
-            // 탭 버튼 활성화
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
+            // 네비게이션 활성화
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
             });
             document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
@@ -648,8 +812,345 @@
                 content.classList.remove('active');
             });
             document.getElementById(tabName).classList.add('active');
+
+            // 탭별 업데이트
+            if (tabName === 'ranking') {
+                renderRanking();
+            } else if (tabName === 'profile') {
+                renderProfile();
+            }
         }
 
+        function selectPostType(type) {
+            selectedPostType = type;
+            
+            // 버튼 활성화
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-type="${type}"]`).classList.add('active');
+
+            // 만남 선택기 표시/숨김
+            const meetingSelector = document.getElementById('meetingSelector');
+            if (type === 'meeting') {
+                meetingSelector.classList.add('active');
+                document.getElementById('postContent').placeholder = '오늘 누구와 만났나요? 어떤 시간을 보내셨나요?';
+            } else {
+                meetingSelector.classList.remove('active');
+                document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
+            }
+        }
+
+        function previewImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageData = e.target.result;
+                document.getElementById('imagePreview').innerHTML = `
+                    <div class="image-preview">
+                        <img src="${currentImageData}" class="preview-img" alt="미리보기">
+                        <button class="remove-img" onclick="removeImage()">&times;</button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            currentImageData = null;
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        function createPost() {
+            const content = document.getElementById('postContent').value.trim();
+            
+            if (!content) {
+                alert('내용을 입력해주세요!');
+                return;
+            }
+
+            if (selectedPostType === 'meeting') {
+                const partner = document.getElementById('meetingPartner').value;
+                if (!partner) {
+                    alert('만난 친구를 선택해주세요!');
+                    return;
+                }
+            }
+
+            const post = {
+                id: Date.now(),
+                author: currentUser,
+                content: content,
+                type: selectedPostType,
+                partner: selectedPostType === 'meeting' ? document.getElementById('meetingPartner').value : null,
+                image: currentImageData,
+                likes: [],
+                date: new Date().toISOString()
+            };
+
+            posts.unshift(post);
+            localStorage.setItem('posts', JSON.stringify(posts));
+
+            // 폼 초기화
+            document.getElementById('postContent').value = '';
+            document.getElementById('meetingPartner').value = '';
+            removeImage();
+
+            renderPostFeed();
+            renderRanking();
+            renderProfile();
+        }
+
+        function renderPostFeed() {
+            const feed = document.getElementById('postFeed');
+            
+            feed.innerHTML = posts.map(post => `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-user">
+                            <div class="profile-pic">${post.author.substring(0, 2)}</div>
+                            <div class="user-info">
+                                <h4>${post.author}</h4>
+                                <div class="post-time">${formatTimeAgo(post.date)}</div>
+                            </div>
+                        </div>
+                        ${post.author === currentUser ? `
+                            <button class="delete-btn" onclick="deletePost(${post.id})">삭제</button>
+                        ` : ''}
+                    </div>
+                    
+                    ${post.image ? `
+                        <img src="${post.image}" class="post-image" alt="게시물 이미지">
+                    ` : ''}
+                    
+                    <div class="post-actions">
+                        <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
+                                onclick="toggleLike(${post.id})">
+                            ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
+                        </button>
+                        <button class="action-btn" onclick="openCreateModal()">💬</button>
+                        <button class="action-btn">📤</button>
+                    </div>
+                    
+                    ${post.likes.length > 0 ? `
+                        <div class="post-likes" onclick="showLikes(${post.id})">
+                            좋아요 ${post.likes.length}개
+                        </div>
+                    ` : ''}
+                    
+                    <div class="post-content">
+                        <span class="username">${post.author}</span>
+                        ${post.type === 'meeting' && post.partner ? 
+                            `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
+                        ${post.content}
+                        ${post.type === 'meeting' ? ' 👥' : ' 📝'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleLike(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const likeIndex = post.likes.indexOf(currentUser);
+            if (likeIndex > -1) {
+                post.likes.splice(likeIndex, 1);
+            } else {
+                post.likes.push(currentUser);
+            }
+
+            localStorage.setItem('posts', JSON.stringify(posts));
+            renderPostFeed();
+            renderProfile();
+        }
+
+        function deletePost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            if (post.author !== currentUser) {
+                alert('자신의 게시물만 삭제할 수 있습니다!');
+                return;
+            }
+
+            if (confirm('정말 삭제하시겠습니까?')) {
+                posts = posts.filter(p => p.id !== postId);
+                localStorage.setItem('posts', JSON.stringify(posts));
+                renderPostFeed();
+                renderProfile();
+            }
+        }
+
+        function showLikes(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post || post.likes.length === 0) return;
+
+            const likesHtml = post.likes.map(user => `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
+                    <div class="profile-pic">${user.substring(0, 2)}</div>
+                    <div style="font-weight: 500;">${user}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('likesModalBody').innerHTML = likesHtml;
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function closeLikesModal() {
+            document.getElementById('likesModal').classList.remove('active');
+        }
+
+        function renderRanking() {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            // 이번달 만남 랭킹
+            const monthlyMeetings = posts.filter(post => {
+                const postDate = new Date(post.date);
+                return post.type === 'meeting' && 
+                       postDate.getMonth() === currentMonth && 
+                       postDate.getFullYear() === currentYear;
+            });
+
+            const meetingCounts = {};
+            friends.forEach(friend => meetingCounts[friend.name] = 0);
+
+            monthlyMeetings.forEach(post => {
+                meetingCounts[post.author]++;
+                if (post.partner) {
+                    meetingCounts[post.partner]++;
+                }
+            });
+
+            const meetingRanking = Object.entries(meetingCounts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+
+            // 이번달 인기글 (좋아요 많은 순)
+            const monthlyPosts = posts.filter(post => {
+                const postDate = new Date(post.date);
+                return postDate.getMonth() === currentMonth && 
+                       postDate.getFullYear() === currentYear;
+            });
+
+            const popularPosts = monthlyPosts
+                .sort((a, b) => b.likes.length - a.likes.length)
+                .slice(0, 5);
+
+            document.getElementById('rankingContent').innerHTML = `
+                <div class="ranking-card">
+                    <div class="ranking-title">👥 이번달 만남킹 랭킹</div>
+                    ${meetingRanking.map((item, index) => `
+                        <div class="ranking-item">
+                            <span class="rank-position">${index + 1}위</span>
+                            <span>${item.name}</span>
+                            <span>${item.count}번</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="ranking-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="ranking-title">🔥 이번달 인기글 TOP 5</div>
+                    ${popularPosts.map((post, index) => `
+                        <div class="ranking-item" style="flex-direction: column; align-items: stretch; padding: 12px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span class="rank-position">${index + 1}위</span>
+                                <span>${post.author}</span>
+                                <span>❤️ ${post.likes.length}</span>
+                            </div>
+                            <div style="font-size: 12px; opacity: 0.8; line-height: 1.3;">
+                                ${post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderProfile() {
+            const userPosts = posts.filter(post => post.author === currentUser);
+            const userMeetings = posts.filter(post => 
+                post.type === 'meeting' && (post.author === currentUser || post.partner === currentUser)
+            );
+            const userLikes = posts.reduce((total, post) => {
+                return total + (post.author === currentUser ? post.likes.length : 0);
+            }, 0);
+
+            document.getElementById('postCount').textContent = userPosts.length;
+            document.getElementById('meetingCount').textContent = userMeetings.length;
+            document.getElementById('likeCount').textContent = userLikes;
+
+            // 내 게시물 표시
+            document.getElementById('myPosts').innerHTML = `
+                <div style="padding: 16px;">
+                    <h3 style="margin-bottom: 16px; text-align: center;">내 게시물</h3>
+                    ${userPosts.length === 0 ? `
+                        <div style="text-align: center; color: #8e8e8e; margin: 40px 0;">
+                            아직 게시물이 없어요<br>
+                            첫 번째 게시물을 작성해보세요!
+                        </div>
+                    ` : userPosts.map(post => `
+                        <div class="post" style="margin-bottom: 16px;">
+                            <div class="post-header">
+                                <div class="post-user">
+                                    <div class="profile-pic">${post.author.substring(0, 2)}</div>
+                                    <div class="user-info">
+                                        <h4>${post.author}</h4>
+                                        <div class="post-time">${formatTimeAgo(post.date)}</div>
+                                    </div>
+                                </div>
+                                <button class="delete-btn" onclick="deletePost(${post.id})">삭제</button>
+                            </div>
+                            
+                            ${post.image ? `
+                                <img src="${post.image}" class="post-image" alt="게시물 이미지">
+                            ` : ''}
+                            
+                            <div class="post-actions">
+                                <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
+                                        onclick="toggleLike(${post.id})">
+                                    ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
+                                </button>
+                            </div>
+                            
+                            ${post.likes.length > 0 ? `
+                                <div class="post-likes" onclick="showLikes(${post.id})">
+                                    좋아요 ${post.likes.length}개
+                                </div>
+                            ` : ''}
+                            
+                            <div class="post-content">
+                                <span class="username">${post.author}</span>
+                                ${post.type === 'meeting' && post.partner ? 
+                                    `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
+                                ${post.content}
+                                ${post.type === 'meeting' ? ' 👥' : ' 📝'}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function openCreateModal() {
+            // 포스트 작성 영역으로 스크롤
+            document.querySelector('.create-post').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+            });
+            document.getElementById('postContent').focus();
+        }
+
+        function showProfile() {
+            switchTab('profile');
+        }
+
+        // 유틸리티 함수들
         function formatBirthday(birthday) {
             const date = new Date(birthday);
             return `${date.getMonth() + 1}월 ${date.getDate()}일`;
@@ -677,531 +1178,20 @@
                 .sort((a, b) => a.daysUntil - b.daysUntil)[0];
         }
 
-        function renderHome() {
-            // 다가오는 생일
-            const nextBirthday = getNextBirthday();
-            document.getElementById('upcomingBirthday').innerHTML = `
-                <div class="birthday-card">
-                    <div class="birthday-name">🎂 ${nextBirthday.name}님의 생일까지</div>
-                    <div class="birthday-countdown">${nextBirthday.daysUntil}일 남았어요!</div>
-                </div>
-            `;
-
-            // 오늘의 만남
-            const todayMeetings = getTodayMeetings();
-            if (todayMeetings.length > 0) {
-                document.getElementById('todayMeetings').innerHTML = `
-                    <div class="feed-item">
-                        <div class="feed-header">💕 오늘의 만남</div>
-                        <div class="feed-content">
-                            ${todayMeetings.map(meeting => 
-                                `<div>${meeting.user}님이 ${meeting.partner}님과 만났어요!</div>`
-                            ).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // 이번달 랭킹
-            renderMonthlyRankings();
-            
-            // 최근 활동
-            renderRecentActivities();
-        }
-
-        function getTodayMeetings() {
-            const today = new Date().toDateString();
-            return meetingRecords.filter(record => 
-                new Date(record.date).toDateString() === today
-            );
-        }
-
-        function renderMonthlyRankings() {
-            const drinkRanking = getMonthlyDrinkRanking();
-            const meetingRanking = getMonthlyCoupleRanking();
-
-            document.getElementById('monthlyRankings').innerHTML = `
-                <div class="ranking-card">
-                    <div class="ranking-title">🍻 이번달 개씨부랄킹 TOP 3</div>
-                    ${drinkRanking.slice(0, 3).map((item, index) => `
-                        <div class="ranking-item">
-                            <span class="rank-position">${index + 1}등</span>
-                            <span>${item.name}</span>
-                            <span>${item.count}번</span>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="ranking-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    <div class="ranking-title">💕 이번달 커플 랭킹 TOP 3</div>
-                    ${meetingRanking.slice(0, 3).map((item, index) => `
-                        <div class="ranking-item">
-                            <span class="rank-position">${index + 1}등</span>
-                            <span>${item.couple}</span>
-                            <span>${item.count}번</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function renderRecentActivities() {
-            const allActivities = [
-                ...drinkRecords.map(r => ({...r, type: 'drink', icon: '🍻'})),
-                ...meetingRecords.map(r => ({...r, type: 'meeting', icon: '💕'})),
-                ...diaryEntries.map(r => ({...r, type: 'diary', icon: '📝'}))
-            ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-
-            document.getElementById('recentActivities').innerHTML = `
-                <div style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">최근 활동</h3>
-                    ${allActivities.map(activity => `
-                        <div class="feed-item">
-                            <div class="feed-header">
-                                ${activity.icon} ${getActivityText(activity)}
-                            </div>
-                            <div class="feed-time">${formatDate(activity.date)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function getActivityText(activity) {
-            switch(activity.type) {
-                case 'drink':
-                    return `${activity.user}님이 ${activity.partner}님과 술을 마셨어요`;
-                case 'meeting':
-                    return `${activity.user}님이 ${activity.partner}님을 만났어요`;
-                case 'diary':
-                    return `${activity.author}님이 일기를 썼어요`;
-                default:
-                    return '';
-            }
-        }
-
-        function addDrinkRecord() {
-            const partner = document.getElementById('drinkPartner').value;
-            if (!partner) {
-                alert('술친구를 선택해주세요!');
-                return;
-            }
-
-            const record = {
-                id: Date.now(),
-                user: currentUser,
-                partner: partner,
-                date: new Date().toISOString()
-            };
-
-            drinkRecords.push(record);
-            localStorage.setItem('drinkRecords', JSON.stringify(drinkRecords));
-            
-            document.getElementById('drinkPartner').value = '';
-            renderDrinkTab();
-            renderHome(); // 홈 화면도 업데이트
-        }
-
-        function addMeetingRecord() {
-            const partner = document.getElementById('meetingPartner').value;
-            if (!partner) {
-                alert('만난 친구를 선택해주세요!');
-                return;
-            }
-
-            const record = {
-                id: Date.now(),
-                user: currentUser,
-                partner: partner,
-                date: new Date().toISOString()
-            };
-
-            meetingRecords.push(record);
-            localStorage.setItem('meetingRecords', JSON.stringify(meetingRecords));
-            
-            document.getElementById('meetingPartner').value = '';
-            renderMeetingTab();
-            renderHome(); // 홈 화면도 업데이트
-        }
-
-        function addDiary() {
-            const text = document.getElementById('diaryText').value.trim();
-            if (!text) {
-                alert('일기 내용을 입력해주세요!');
-                return;
-            }
-
-            const diary = {
-                id: Date.now(),
-                author: currentUser,
-                content: text,
-                date: new Date().toISOString()
-            };
-
-            diaryEntries.push(diary);
-            localStorage.setItem('diaryEntries', JSON.stringify(diaryEntries));
-            
-            document.getElementById('diaryText').value = '';
-            renderDiaryTab();
-            renderHome(); // 홈 화면도 업데이트
-        }
-
-        function uploadPhoto() {
-            const fileInput = document.getElementById('photoFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert('사진을 선택해주세요!');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const photo = {
-                    id: Date.now(),
-                    uploader: currentUser,
-                    imageData: e.target.result,
-                    votes: 0,
-                    voters: [],
-                    date: new Date().toISOString()
-                };
-
-                photoGallery.push(photo);
-                localStorage.setItem('photoGallery', JSON.stringify(photoGallery));
-                
-                fileInput.value = '';
-                renderPhotosTab();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function votePhoto(photoId) {
-            const photo = photoGallery.find(p => p.id === photoId);
-            if (!photo) return;
-
-            if (photo.voters.includes(currentUser)) {
-                alert('이미 투표하셨습니다!');
-                return;
-            }
-
-            photo.votes++;
-            photo.voters.push(currentUser);
-            localStorage.setItem('photoGallery', JSON.stringify(photoGallery));
-            renderPhotosTab();
-        }
-
-        function deletePhoto(photoId) {
-            const photo = photoGallery.find(p => p.id === photoId);
-            if (!photo) return;
-
-            if (photo.uploader !== currentUser) {
-                alert('자신이 올린 사진만 삭제할 수 있습니다!');
-                return;
-            }
-
-            if (confirm('정말 삭제하시겠습니까?')) {
-                photoGallery = photoGallery.filter(p => p.id !== photoId);
-                localStorage.setItem('photoGallery', JSON.stringify(photoGallery));
-                renderPhotosTab();
-            }
-        }
-
-        function deleteDrinkRecord(recordId) {
-            const record = drinkRecords.find(r => r.id === recordId);
-            if (!record) return;
-
-            if (record.user !== currentUser) {
-                alert('자신의 기록만 삭제할 수 있습니다!');
-                return;
-            }
-
-            if (confirm('정말 삭제하시겠습니까?')) {
-                drinkRecords = drinkRecords.filter(r => r.id !== recordId);
-                localStorage.setItem('drinkRecords', JSON.stringify(drinkRecords));
-                renderDrinkTab();
-                renderHome();
-            }
-        }
-
-        function deleteMeetingRecord(recordId) {
-            const record = meetingRecords.find(r => r.id === recordId);
-            if (!record) return;
-
-            if (record.user !== currentUser) {
-                alert('자신의 기록만 삭제할 수 있습니다!');
-                return;
-            }
-
-            if (confirm('정말 삭제하시겠습니까?')) {
-                meetingRecords = meetingRecords.filter(r => r.id !== recordId);
-                localStorage.setItem('meetingRecords', JSON.stringify(meetingRecords));
-                renderMeetingTab();
-                renderHome();
-            }
-        }
-
-        function deleteDiary(diaryId) {
-            const diary = diaryEntries.find(d => d.id === diaryId);
-            if (!diary) return;
-
-            if (diary.author !== currentUser) {
-                alert('자신의 일기만 삭제할 수 있습니다!');
-                return;
-            }
-
-            if (confirm('정말 삭제하시겠습니까?')) {
-                diaryEntries = diaryEntries.filter(d => d.id !== diaryId);
-                localStorage.setItem('diaryEntries', JSON.stringify(diaryEntries));
-                renderDiaryTab();
-                renderHome();
-            }
-        }
-
-        function getMonthlyDrinkRanking() {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            const monthlyRecords = drinkRecords.filter(record => {
-                const recordDate = new Date(record.date);
-                return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
-            });
-
-            const counts = {};
-            friends.forEach(friend => counts[friend.name] = 0);
-
-            monthlyRecords.forEach(record => {
-                counts[record.user]++;
-            });
-
-            return Object.entries(counts)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count);
-        }
-
-        function getMonthlyCoupleRanking() {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            const monthlyRecords = meetingRecords.filter(record => {
-                const recordDate = new Date(record.date);
-                return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
-            });
-
-            const couples = {};
-
-            monthlyRecords.forEach(record => {
-                const coupleKey = [record.user, record.partner].sort().join(' & ');
-                couples[coupleKey] = (couples[coupleKey] || 0) + 1;
-            });
-
-            return Object.entries(couples)
-                .map(([couple, count]) => ({ couple, count }))
-                .sort((a, b) => b.count - a.count);
-        }
-
-        function renderDrinkTab() {
-            const ranking = getMonthlyDrinkRanking();
-            const recentRecords = drinkRecords
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .slice(0, 10);
-
-            document.getElementById('drinkRanking').innerHTML = `
-                <div class="ranking-card">
-                    <div class="ranking-title">🏆 이번달 개씨부랄킹 랭킹</div>
-                    ${ranking.map((item, index) => `
-                        <div class="ranking-item">
-                            <span class="rank-position">${index + 1}위</span>
-                            <span>${item.name}</span>
-                            <span>${item.count}번</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-
-            document.getElementById('drinkHistory').innerHTML = `
-                <div style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">최근 술자리 기록</h3>
-                    ${recentRecords.map(record => `
-                        <div class="feed-item">
-                            <div class="feed-header">
-                                🍻 ${record.user} + ${record.partner}
-                                ${record.user === currentUser ? `
-                                    <button class="btn btn-small btn-danger" onclick="deleteDrinkRecord(${record.id})" style="margin-left: auto;">삭제</button>
-                                ` : ''}
-                            </div>
-                            <div class="feed-time">${formatDate(record.date)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function renderMeetingTab() {
-            const ranking = getMonthlyCoupleRanking();
-            const recentRecords = meetingRecords
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .slice(0, 10);
-
-            document.getElementById('meetingRanking').innerHTML = `
-                <div class="ranking-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    <div class="ranking-title">💕 이번달 커플 랭킹</div>
-                    ${ranking.map((item, index) => `
-                        <div class="ranking-item">
-                            <span class="rank-position">${index + 1}위</span>
-                            <span>${item.couple}</span>
-                            <span>${item.count}번</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-
-            document.getElementById('meetingHistory').innerHTML = `
-                <div style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">최근 만남 기록</h3>
-                    ${recentRecords.map(record => `
-                        <div class="feed-item">
-                            <div class="feed-header">
-                                💕 ${record.user} + ${record.partner}
-                                ${record.user === currentUser ? `
-                                    <button class="btn btn-small btn-danger" onclick="deleteMeetingRecord(${record.id})" style="margin-left: auto;">삭제</button>
-                                ` : ''}
-                            </div>
-                            <div class="feed-time">${formatDate(record.date)}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function renderFriendsTab() {
-            const nextBirthday = getNextBirthday();
-            
-            document.getElementById('nextBirthday').innerHTML = `
-                <div class="birthday-card">
-                    <div class="birthday-name">🎂 다음 생일: ${nextBirthday.name}</div>
-                    <div class="birthday-countdown">${nextBirthday.daysUntil}일 후 (${formatBirthday(nextBirthday.birthday)})</div>
-                </div>
-            `;
-
-            // 친구별 통계
-            const friendsStats = friends.map(friend => {
-                const drinkCount = drinkRecords.filter(r => r.user === friend.name).length;
-                const meetingCount = meetingRecords.filter(r => r.user === friend.name || r.partner === friend.name).length;
-                const diaryCount = diaryEntries.filter(d => d.author === friend.name).length;
-                
-                return {
-                    ...friend,
-                    drinkCount,
-                    meetingCount,
-                    diaryCount,
-                    daysUntil: getDaysUntilBirthday(friend.birthday)
-                };
-            });
-
-            document.getElementById('friendsStats').innerHTML = `
-                <div style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">친구들 통계</h3>
-                    <div class="friends-grid">
-                        ${friendsStats.map(friend => `
-                            <div class="friend-stats-card">
-                                <div class="friend-stats-name">${friend.name}</div>
-                                <div class="friend-stats">
-                                    생일: ${formatBirthday(friend.birthday)} (${friend.daysUntil}일 후)<br>
-                                    술자리: ${friend.drinkCount}번<br>
-                                    만남: ${friend.meetingCount}번<br>
-                                    일기: ${friend.diaryCount}개
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderDiaryTab() {
-            const sortedDiaries = diaryEntries
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            document.getElementById('diaryList').innerHTML = `
-                <div>
-                    <h3 style="margin-bottom: 15px;">일기 목록</h3>
-                    ${sortedDiaries.map(diary => `
-                        <div class="diary-item">
-                            <div class="diary-header">
-                                <span class="diary-author">${diary.author}</span>
-                                <div>
-                                    <span class="diary-date">${formatDate(diary.date)}</span>
-                                    ${diary.author === currentUser ? `
-                                        <button class="btn btn-small btn-danger" onclick="deleteDiary(${diary.id})" style="margin-left: 10px;">삭제</button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                            <div class="diary-content">${diary.content}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function renderPhotosTab() {
-            const sortedPhotos = photoGallery
-                .sort((a, b) => b.votes - a.votes);
-
-            document.getElementById('photoGallery').innerHTML = `
-                <div>
-                    <h3 style="margin-bottom: 15px;">사진 투표 갤러리</h3>
-                    <div class="photo-grid">
-                        ${sortedPhotos.map(photo => `
-                            <div class="photo-item">
-                                <img src="${photo.imageData}" alt="사진" class="photo-img">
-                                <div class="photo-info">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                        <span>${photo.uploader}</span>
-                                        <span class="photo-votes">❤️ ${photo.votes}</span>
-                                    </div>
-                                    <div style="display: flex; gap: 10px;">
-                                        ${!photo.voters.includes(currentUser) ? `
-                                            <button class="btn btn-small" onclick="votePhoto(${photo.id})">좋아요</button>
-                                        ` : `
-                                            <span style="color: #405de6; font-size: 12px;">투표 완료</span>
-                                        `}
-                                        ${photo.uploader === currentUser ? `
-                                            <button class="btn btn-small btn-danger" onclick="deletePhoto(${photo.id})">삭제</button>
-                                        ` : ''}
-                                    </div>
-                                    <div style="font-size: 12px; color: #8e8e8e; margin-top: 5px;">
-                                        ${formatDate(photo.date)}
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function randomPick() {
-            const randomFriend = friends[Math.floor(Math.random() * friends.length)];
-            const messages = [
-                `🎯 오늘의 호구는 ${randomFriend.name}님입니다!`,
-                `🍕 ${randomFriend.name}님이 치킨 사주세요!`,
-                `💸 ${randomFriend.name}님 지갑 열어주세요~`,
-                `🎉 축하합니다! ${randomFriend.name}님이 당첨되셨습니다!`,
-                `🔥 ${randomFriend.name}님 오늘 뭔가 사주실 것 같은데요?`
-            ];
-            
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            document.getElementById('randomResult').innerHTML = randomMessage;
-        }
-
-        function formatDate(dateString) {
+        function formatTimeAgo(dateString) {
             const date = new Date(dateString);
             const now = new Date();
             const diffTime = now - date;
+            const diffMinutes = Math.floor(diffTime / (1000 * 60));
+            const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             
-            if (diffDays === 0) {
-                return '오늘';
+            if (diffMinutes < 1) {
+                return '방금 전';
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes}분 전`;
+            } else if (diffHours < 24) {
+                return `${diffHours}시간 전`;
             } else if (diffDays === 1) {
                 return '어제';
             } else if (diffDays < 7) {
@@ -1210,6 +1200,22 @@
                 return `${date.getMonth() + 1}월 ${date.getDate()}일`;
             }
         }
+
+        // 모달 외부 클릭시 닫기
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+
+        // 키보드 ESC로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
     </script>
 </body>
 </html>
