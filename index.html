@@ -894,7 +894,6 @@
         <div class="header">
             <div class="header-title">가조쿠</div>
             <div class="header-icons">
-                <button class="icon-btn" onclick="openCreateModal()">➕</button>
                 <button class="icon-btn" onclick="showProfile()">👤</button>
             </div>
         </div>
@@ -953,7 +952,6 @@
                         <button class="search-tab active" onclick="showRankingTab('meeting')">만남킹</button>
                         <button class="search-tab" onclick="showRankingTab('popular')">인기글</button>
                         <button class="search-tab" onclick="showRankingTab('biho')">왕비호</button>
-                        <button class="search-tab" onclick="showRankingTab('fun')">게임</button>
                         <button class="search-tab" onclick="showRankingTab('stats')">통계</button>
                     </div>
                     <div id="rankingContent"></div>
@@ -1653,11 +1651,14 @@
 
         function openCreateModal() {
             // 포스트 작성 영역으로 스크롤
-            document.querySelector('.create-post').scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'center'
-            });
-            document.getElementById('postContent').focus();
+            switchTab('home');
+            setTimeout(() => {
+                document.querySelector('.create-post').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                document.getElementById('postContent').focus();
+            }, 100);
         }
 
         function showProfile() {
@@ -1744,47 +1745,7 @@
             }
         }
 
-        // 재미 요소 함수들
-        function randomPick() {
-            const randomFriend = friends[Math.floor(Math.random() * friends.length)];
-            const messages = [
-                `🎯 오늘의 호구는 ${randomFriend.name}님입니다!`,
-                `🍕 ${randomFriend.name}님이 치킨 사주세요!`,
-                `💸 ${randomFriend.name}님 지갑 열어주세요~`,
-                `🎉 축하합니다! ${randomFriend.name}님이 당첨되셨습니다!`,
-                `🔥 ${randomFriend.name}님 오늘 뭔가 사주실 것 같은데요?`
-            ];
-            
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            const resultElement = document.getElementById('funResultInTab') || document.getElementById('funResult');
-            if (resultElement) {
-                resultElement.innerHTML = randomMessage;
-            }
-        }
-
-        function randomDate() {
-            const person1 = friends[Math.floor(Math.random() * friends.length)];
-            let person2 = friends[Math.floor(Math.random() * friends.length)];
-            
-            while (person2.name === person1.name) {
-                person2 = friends[Math.floor(Math.random() * friends.length)];
-            }
-            
-            const activity = dateActivities[Math.floor(Math.random() * dateActivities.length)];
-            
-            const resultElement = document.getElementById('funResultInTab') || document.getElementById('funResult');
-            if (resultElement) {
-                resultElement.innerHTML = `💕 ${person1.name} + ${person2.name}<br>${activity}`;
-            }
-        }
-
-        function randomChallenge() {
-            const challenge = randomChallenges[Math.floor(Math.random() * randomChallenges.length)];
-            const resultElement = document.getElementById('funResultInTab') || document.getElementById('funResult');
-            if (resultElement) {
-                resultElement.innerHTML = challenge;
-            }
-        }
+        // 재미 요소 함수들 (삭제됨 - 더 이상 사용하지 않음)
 
         // 유틸리티 함수들
         function formatBirthday(birthday) {
