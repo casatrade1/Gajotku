@@ -1548,6 +1548,52 @@
                         `).join('')}
                     </div>
                 `;
+            } else if (currentRankingTab === 'biho') {
+                // 왕비호 랭킹
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+                
+                // 초기화가 안되어 있다면 지금 초기화
+                if (!bihoVotes[currentMonth]) {
+                    initializeBihoVotes();
+                }
+                
+                const currentVotes = bihoVotes[currentMonth];
+                const bihoRanking = Object.entries(currentVotes.votes)
+                    .map(([name, votes]) => ({ name, votes }))
+                    .sort((a, b) => b.votes - a.votes);
+
+                const hasVoted = currentVotes.voters[currentUser];
+
+                content = `
+                    <div class="ranking-card" style="background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);">
+                        <div class="ranking-title">👑 이번달 왕비호 랭킹</div>
+                        <div style="text-align: center; margin-bottom: 16px; font-size: 12px; opacity: 0.8;">
+                            ${now.getMonth() + 1}월 왕비호 투표 현황
+                        </div>
+                        ${bihoRanking.filter(item => item.votes > 0).length === 0 ? `
+                            <div style="text-align: center; padding: 20px; opacity: 0.7;">
+                                아직 투표가 없어요<br>첫 투표의 주인공이 되어보세요! 😈
+                            </div>
+                        ` : bihoRanking.filter(item => item.votes > 0).map((item, index) => `
+                            <div class="ranking-item">
+                                <div style="display: flex; align-items: center;">
+                                    <span class="rank-position">${index + 1}위</span>
+                                    ${index === 0 ? '<span class="biho-crown">👑</span>' : ''}
+                                    <span>${item.name}</span>
+                                </div>
+                                <span>${item.votes}표</span>
+                            </div>
+                        `).join('')}
+                        
+                        <div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            ${hasVoted ? 
+                                '<span style="font-size: 12px; opacity: 0.7;">이번달 투표 완료! 👍</span>' : 
+                                '<button class="vote-btn" onclick="openBihoVoteModal()">투표하러 가기</button>'
+                            }
+                        </div>
+                    </div>
+                `;
             } else if (currentRankingTab === 'stats') {
                 // 전체 통계
                 const totalPosts = posts.length;
