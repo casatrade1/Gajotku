@@ -942,18 +942,6 @@
                     <input type="file" id="imageInput" class="hidden-file-input" accept="image/*" onchange="previewImage(this)">
                 </div>
 
-                <!-- 재미 요소 -->
-                <div class="fun-section">
-                    <div class="fun-header">🎲 가조쿠 랜덤 게임</div>
-                    <div class="fun-content">
-                        <button class="fun-btn" onclick="randomPick()">오늘의 호구 뽑기!</button>
-                        <button class="fun-btn" onclick="randomDate()">랜덤 데이트 조합!</button>
-                        <button class="fun-btn" onclick="randomChallenge()">오늘의 챌린지!</button>
-                        <button class="fun-btn" onclick="openBihoVoteModal()" style="background: #e91e63;">👑 왕비호 투표하기</button>
-                        <div class="fun-result" id="funResult">게임을 선택해보세요!</div>
-                    </div>
-                </div>
-
                 <!-- 포스트 피드 -->
                 <div id="postFeed"></div>
             </div>
@@ -965,6 +953,7 @@
                         <button class="search-tab active" onclick="showRankingTab('meeting')">만남킹</button>
                         <button class="search-tab" onclick="showRankingTab('popular')">인기글</button>
                         <button class="search-tab" onclick="showRankingTab('biho')">왕비호</button>
+                        <button class="search-tab" onclick="showRankingTab('fun')">게임</button>
                         <button class="search-tab" onclick="showRankingTab('stats')">통계</button>
                     </div>
                     <div id="rankingContent"></div>
@@ -1767,7 +1756,10 @@
             ];
             
             const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            document.getElementById('funResult').innerHTML = randomMessage;
+            const resultElement = document.getElementById('funResultInTab') || document.getElementById('funResult');
+            if (resultElement) {
+                resultElement.innerHTML = randomMessage;
+            }
         }
 
         function randomDate() {
@@ -1780,13 +1772,18 @@
             
             const activity = dateActivities[Math.floor(Math.random() * dateActivities.length)];
             
-            document.getElementById('funResult').innerHTML = 
-                `💕 ${person1.name} + ${person2.name}<br>${activity}`;
+            const resultElement = document.getElementById('funResultInTab') || document.getElementById('funResult');
+            if (resultElement) {
+                resultElement.innerHTML = `💕 ${person1.name} + ${person2.name}<br>${activity}`;
+            }
         }
 
         function randomChallenge() {
             const challenge = randomChallenges[Math.floor(Math.random() * randomChallenges.length)];
-            document.getElementById('funResult').innerHTML = challenge;
+            const resultElement = document.getElementById('funResultInTab') || document.getElementById('funResult');
+            if (resultElement) {
+                resultElement.innerHTML = challenge;
+            }
         }
 
         // 유틸리티 함수들
