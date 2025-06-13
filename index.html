@@ -785,6 +785,58 @@
             cursor: pointer;
         }
 
+        /* 왕비호 투표 스타일 */
+        .biho-vote-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .biho-vote-item:hover {
+            background: #f8f9fa;
+        }
+
+        .biho-vote-item.voted {
+            background: #fff5f5;
+            border-color: #e91e63;
+        }
+
+        .biho-vote-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vote-btn {
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .vote-btn:hover {
+            background: #d63447;
+        }
+
+        .vote-btn:disabled {
+            background: #c7c7c7;
+            cursor: not-allowed;
+        }
+
+        .biho-crown {
+            font-size: 18px;
+            margin-right: 8px;
+        }
+
         /* 삭제 버튼 */
         .delete-btn {
             color: #ed4956;
@@ -897,6 +949,7 @@
                         <button class="fun-btn" onclick="randomPick()">오늘의 호구 뽑기!</button>
                         <button class="fun-btn" onclick="randomDate()">랜덤 데이트 조합!</button>
                         <button class="fun-btn" onclick="randomChallenge()">오늘의 챌린지!</button>
+                        <button class="fun-btn" onclick="openBihoVoteModal()" style="background: #e91e63;">👑 왕비호 투표하기</button>
                         <div class="fun-result" id="funResult">게임을 선택해보세요!</div>
                     </div>
                 </div>
@@ -911,6 +964,7 @@
                     <div class="search-tabs">
                         <button class="search-tab active" onclick="showRankingTab('meeting')">만남킹</button>
                         <button class="search-tab" onclick="showRankingTab('popular')">인기글</button>
+                        <button class="search-tab" onclick="showRankingTab('biho')">왕비호</button>
                         <button class="search-tab" onclick="showRankingTab('stats')">통계</button>
                     </div>
                     <div id="rankingContent"></div>
@@ -966,6 +1020,23 @@
         </div>
     </div>
 
+    <!-- 왕비호 투표 모달 -->
+    <div id="bihoVoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">👑 왕비호 투표</div>
+                <button class="close-btn" onclick="closeBihoVoteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 20px; color: #8e8e8e; font-size: 14px;">
+                    이번달 가장 맘에 안 드는 친구를 선택하세요 😈<br>
+                    <span style="color: #e91e63; font-weight: bold;">한 달에 한 번만 투표 가능!</span>
+                </div>
+                <div id="bihoVoteList"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 프로필 편집 모달 -->
     <div id="editProfileModal" class="modal">
         <div class="modal-content">
@@ -1018,6 +1089,27 @@
         // 데이터 저장소
         let posts = JSON.parse(localStorage.getItem('posts') || '[]');
         let profiles = JSON.parse(localStorage.getItem('profiles') || '{}');
+        let bihoVotes = JSON.parse(localStorage.getItem('bihoVotes') || '{}');
+
+        // 왕비호 투표 초기화 (매월 1일마다 리셋)
+        function initializeBihoVotes() {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+            
+            if (!bihoVotes[currentMonth]) {
+                bihoVotes[currentMonth] = {
+                    votes: {},
+                    voters: {}
+                };
+                
+                // 모든 친구들 0표로 초기화
+                friends.forEach(friend => {
+                    bihoVotes[currentMonth].votes[friend.name] = 0;
+                });
+                
+                localStorage.setItem('bihoVotes', JSON.stringify(bihoVotes));
+            }
+        }
 
         // 재미 데이터
         const randomChallenges = [
@@ -1096,6 +1188,7 @@
             renderPostFeed();
             renderRanking();
             renderProfile();
+            initializeBihoVotes();
         }
 
         function setupSelectOptions() {
@@ -1602,6 +1695,64 @@
             
             document.getElementById('profileBio').textContent = bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
             closeEditProfileModal();
+        }
+
+        // 왕비호 투표 함수들
+        function openBihoVoteModal() {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+            const currentVotes = bihoVotes[currentMonth] || { votes: {}, voters: {} };
+            
+            // 이미 투표했는지 확인
+            if (currentVotes.voters && currentVotes.voters[currentUser]) {
+                alert('이번달에 이미 투표하셨습니다! 다음달을 기다려주세요 😊');
+                return;
+            }
+
+            // 투표 가능한 친구들 (자신 제외)
+            const votableFriends = friends.filter(f => f.name !== currentUser);
+            
+            const voteListHtml = votableFriends.map(friend => `
+                <div class="biho-vote-item">
+                    <div class="biho-vote-info">
+                        <div class="profile-pic">${friend.name.substring(0, 2)}</div>
+                        <div>
+                            <div style="font-weight: 600;">${friend.name}</div>
+                            <div style="font-size: 12px; color: #8e8e8e;">현재 ${currentVotes.votes[friend.name] || 0}표</div>
+                        </div>
+                    </div>
+                    <button class="vote-btn" onclick="voteBiho('${friend.name}')">투표</button>
+                </div>
+            `).join('');
+
+            document.getElementById('bihoVoteList').innerHTML = voteListHtml;
+            document.getElementById('bihoVoteModal').classList.add('active');
+        }
+
+        function closeBihoVoteModal() {
+            document.getElementById('bihoVoteModal').classList.remove('active');
+        }
+
+        function voteBiho(targetName) {
+            if (confirm(`정말 ${targetName}님에게 투표하시겠습니까? 😈\n이번달에는 다시 투표할 수 없어요!`)) {
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+                
+                if (!bihoVotes[currentMonth]) {
+                    initializeBihoVotes();
+                }
+                
+                // 투표 추가
+                bihoVotes[currentMonth].votes[targetName]++;
+                bihoVotes[currentMonth].voters[currentUser] = true;
+                
+                localStorage.setItem('bihoVotes', JSON.stringify(bihoVotes));
+                
+                closeBihoVoteModal();
+                renderRanking(); // 랭킹 업데이트
+                
+                alert(`${targetName}님에게 투표 완료! 👑\n결과는 랭킹에서 확인하세요!`);
+            }
         }
 
         // 재미 요소 함수들
