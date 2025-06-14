@@ -2024,7 +2024,17 @@
                         <img src="${post.image}" class="post-image" alt="게시물 이미지">
                     ` : ''}
                     
-                    <div class="post-actions">
+                    <div class="post-content" style="padding: 12px 16px; order: 1;">
+                        <span class="username">${post.author}</span>
+                        ${post.type === 'meeting' && post.partners ? 
+                            `<span style="color: #405de6;">@${post.partners.join(', @')}</span>와 함께 ` : 
+                            post.type === 'meeting' && post.partner ? 
+                            `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
+                        ${post.content}
+                        ${post.type === 'meeting' ? ' 👥' : ' 📝'}
+                    </div>
+                    
+                    <div class="post-actions" style="order: 2;">
                         <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
                                 onclick="toggleLike('${post.id}')">
                             ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
@@ -2034,28 +2044,18 @@
                     </div>
                     
                     ${post.likes.length > 0 ? `
-                        <div class="post-likes" onclick="showLikes('${post.id}')">
+                        <div class="post-likes" style="order: 3;" onclick="showLikes('${post.id}')">
                             좋아요 ${post.likes.length}개
                         </div>
                     ` : ''}
                     
                     ${comments[post.id] && comments[post.id].length > 0 ? `
-                        <div style="padding: 0 16px; margin-bottom: 8px;">
+                        <div style="padding: 0 16px; margin-bottom: 8px; order: 4;">
                             <span style="color: #8e8e8e; font-size: 14px; cursor: pointer;" onclick="openCommentModal('${post.id}')">
                                 댓글 ${comments[post.id].length}개 모두 보기
                             </span>
                         </div>
                     ` : ''}
-                    
-                    <div class="post-content">
-                        <span class="username">${post.author}</span>
-                        ${post.type === 'meeting' && post.partners ? 
-                            `<span style="color: #405de6;">@${post.partners.join(', @')}</span>와 함께 ` : 
-                            post.type === 'meeting' && post.partner ? 
-                            `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
-                        ${post.content}
-                        ${post.type === 'meeting' ? ' 👥' : ' 📝'}
-                    </div>
                 </div>
             `).join('');
         }
