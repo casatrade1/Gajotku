@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>가조쿠 - 친구들만의 SNS</title>
     
     <!-- Firebase SDK -->
@@ -27,25 +29,27 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .login-box {
             background: white;
             border: 1px solid #dbdbdb;
             border-radius: 12px;
-            padding: 40px;
-            max-width: 400px;
+            padding: 30px 20px;
+            max-width: 350px;
             width: 100%;
             text-align: center;
+            margin-top: 10px;
         }
 
         .logo {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -53,19 +57,23 @@
 
         .friend-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .friend-card {
             background: #f8f9fa;
             border: 2px solid #e1e5e9;
             border-radius: 12px;
-            padding: 15px;
+            padding: 12px 8px;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .friend-card:hover {
@@ -842,6 +850,23 @@
         @media (max-width: 480px) {
             .friend-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .login-box {
+                padding: 20px 15px;
+                margin: 10px;
+            }
+            
+            .logo {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+            
+            .friend-card {
+                padding: 10px 6px;
+                min-height: 50px;
+                font-size: 13px;
             }
             
             .profile-top {
@@ -852,6 +877,38 @@
                 width: 70px;
                 height: 70px;
                 font-size: 20px;
+            }
+
+            /* 입력 필드 확대 방지 */
+            input, textarea, select {
+                font-size: 16px !important;
+                transform-origin: left top;
+                transform: scale(1);
+            }
+
+            /* 터치 영역 최적화 */
+            .action-btn {
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .nav-item {
+                min-height: 44px;
+            }
+        }
+
+        /* iOS Safari 최적화 */
+        @supports (-webkit-touch-callout: none) {
+            .main-app {
+                min-height: -webkit-fill-available;
+            }
+            
+            .content {
+                padding-bottom: calc(60px + env(safe-area-inset-bottom));
+            }
+            
+            .bottom-nav {
+                padding-bottom: env(safe-area-inset-bottom);
             }
         }
 
@@ -883,6 +940,7 @@
             <div class="header-title">가조쿠</div>
             <div class="header-icons">
                 <button class="icon-btn" onclick="showProfile()">👤</button>
+                <button class="icon-btn" onclick="logout()" title="로그아웃">🚪</button>
             </div>
         </div>
 
@@ -912,9 +970,11 @@
                     <textarea class="create-input" id="postContent" placeholder="오늘 어떤 하루를 보내셨나요?"></textarea>
                     
                     <div class="meeting-selector" id="meetingSelector">
-                        <select id="meetingPartner">
-                            <option value="">만난 친구 선택</option>
-                        </select>
+                        <div style="margin-bottom: 8px; font-size: 12px; color: #8e8e8e;">만난 친구들을 선택하세요 (여러명 가능)</div>
+                        <div id="friendCheckboxes" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 120px; overflow-y: auto;">
+                            <!-- 친구 체크박스들이 여기에 생성됩니다 -->
+                        </div>
+                        <div id="selectedFriends" style="margin-top: 8px; font-size: 12px; color: #405de6;"></div>
                     </div>
                     
                     <div id="imagePreview"></div>
@@ -1117,17 +1177,28 @@
         class FirebaseManager {
             static async addPost(post) {
                 if (!db) {
-                    posts.unshift(post);
+                    console.log('오프라인 모드: 로컬 저장만');
+                    // 로컬에는 이미 추가되어 있으므로 localStorage에만 저장
                     localStorage.setItem('posts', JSON.stringify(posts));
                     return true;
                 }
 
                 try {
-                    await db.collection('posts').add(post);
+                    // Firebase에 저장할 때는 id 필드 제외 (Firestore가 자동 생성)
+                    const { id, ...postData } = post;
+                    const docRef = await db.collection('posts').add(postData);
+                    console.log('Firebase 문서 ID:', docRef.id);
+                    
+                    // 로컬 posts 배열에서 해당 게시물의 id를 Firebase ID로 업데이트
+                    const localPostIndex = posts.findIndex(p => p.id === post.id);
+                    if (localPostIndex !== -1) {
+                        posts[localPostIndex].id = docRef.id;
+                    }
+                    
                     return true;
                 } catch (error) {
                     console.error('포스트 저장 실패:', error);
-                    posts.unshift(post);
+                    // 실패해도 로컬에는 저장되어 있음
                     localStorage.setItem('posts', JSON.stringify(posts));
                     return true;
                 }
@@ -1145,6 +1216,7 @@
                         id: doc.id,
                         ...doc.data()
                     }));
+                    console.log(`✅ Firebase에서 ${posts.length}개 게시물 로드`);
                     return posts;
                 } catch (error) {
                     console.error('포스트 로드 실패:', error);
@@ -1333,14 +1405,38 @@
 
             try {
                 db.collection('posts').onSnapshot((snapshot) => {
-                    posts = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                    console.log('Firebase 게시물 업데이트 감지');
                     
-                    if (document.getElementById('postFeed')) {
-                        renderPostFeed();
-                        renderStories();
+                    const updatedPosts = [];
+                    snapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        updatedPosts.push({
+                            id: doc.id,
+                            ...data
+                        });
+                    });
+                    
+                    // 날짜순 정렬
+                    updatedPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    // 기존 posts와 비교해서 실제로 변경된 경우만 업데이트
+                    const postsChanged = JSON.stringify(posts) !== JSON.stringify(updatedPosts);
+                    
+                    if (postsChanged) {
+                        console.log('게시물 목록 업데이트:', updatedPosts.length, '개');
+                        posts = updatedPosts;
+                        
+                        // UI 업데이트는 debounce 적용
+                        clearTimeout(window.updateUITimeout);
+                        window.updateUITimeout = setTimeout(() => {
+                            if (document.getElementById('postFeed')) {
+                                renderPostFeed();
+                                renderStories();
+                                if (currentUser && document.getElementById('profile').classList.contains('active')) {
+                                    renderProfile();
+                                }
+                            }
+                        }, 100);
                     }
                 });
 
@@ -1358,13 +1454,17 @@
                             date: data.date
                         });
                     });
-                    comments = updatedComments;
                     
-                    if (currentPostId && document.getElementById('commentModal').classList.contains('active')) {
-                        renderComments(currentPostId);
-                    }
-                    if (document.getElementById('postFeed')) {
-                        renderPostFeed();
+                    const commentsChanged = JSON.stringify(comments) !== JSON.stringify(updatedComments);
+                    if (commentsChanged) {
+                        comments = updatedComments;
+                        
+                        if (currentPostId && document.getElementById('commentModal').classList.contains('active')) {
+                            renderComments(currentPostId);
+                        }
+                        if (document.getElementById('postFeed')) {
+                            renderPostFeed();
+                        }
                     }
                 });
 
@@ -1379,6 +1479,8 @@
                         renderRanking();
                     }
                 });
+                
+                console.log('실시간 리스너 설정 완료');
             } catch (error) {
                 console.log('실시간 리스너 설정 실패:', error);
             }
@@ -1659,13 +1761,32 @@
         }
 
         function setupSelectOptions() {
-            const meetingSelect = document.getElementById('meetingPartner');
-            const options = friends
-                .filter(f => f.name !== currentUser)
-                .map(f => `<option value="${f.name}">${f.name}</option>`)
-                .join('');
+            // 만남 선택용 체크박스 생성
+            const friendCheckboxes = document.getElementById('friendCheckboxes');
+            if (friendCheckboxes) {
+                const checkboxHtml = friends
+                    .filter(f => f.name !== currentUser)
+                    .map(f => `
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #dbdbdb; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                            <input type="checkbox" value="${f.name}" onchange="updateSelectedFriends()" style="margin: 0;">
+                            <span>${f.name}</span>
+                        </label>
+                    `).join('');
+                
+                friendCheckboxes.innerHTML = checkboxHtml;
+            }
+        }
+
+        function updateSelectedFriends() {
+            const checkboxes = document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked');
+            const selectedNames = Array.from(checkboxes).map(cb => cb.value);
             
-            meetingSelect.innerHTML = '<option value="">만난 친구 선택</option>' + options;
+            const selectedDiv = document.getElementById('selectedFriends');
+            if (selectedNames.length > 0) {
+                selectedDiv.textContent = `선택된 친구: ${selectedNames.join(', ')}`;
+            } else {
+                selectedDiv.textContent = '';
+            }
         }
 
         function updateProfilePics() {
@@ -1797,6 +1918,7 @@
         }
 
         async function createPost() {
+            console.log('게시물 작성 시작');
             const content = document.getElementById('postContent').value.trim();
             
             if (!content) {
@@ -1805,31 +1927,55 @@
             }
 
             if (selectedPostType === 'meeting') {
-                const partner = document.getElementById('meetingPartner').value;
-                if (!partner) {
-                    alert('만난 친구를 선택해주세요!');
+                const checkboxes = document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked');
+                const selectedFriends = Array.from(checkboxes).map(cb => cb.value);
+                
+                if (selectedFriends.length === 0) {
+                    alert('만난 친구를 최소 1명 이상 선택해주세요!');
                     return;
                 }
             }
 
+            // 고유 ID 생성 (더 안전한 방법)
+            const postId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+
             const post = {
-                id: Date.now().toString(),
+                id: postId,
                 author: currentUser,
                 content: content,
                 type: selectedPostType,
-                partner: selectedPostType === 'meeting' ? document.getElementById('meetingPartner').value : null,
+                partners: selectedPostType === 'meeting' ? 
+                    Array.from(document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value) : 
+                    null,
                 image: currentImageData,
                 likes: [],
                 date: new Date().toISOString()
             };
 
-            await FirebaseManager.addPost(post);
+            console.log('생성된 게시물:', post);
 
+            // 즉시 로컬에 추가 (낙관적 업데이트)
+            posts.unshift(post);
+            renderPostFeed();
+            console.log('로컬 UI 업데이트 완료');
+
+            // 폼 초기화
             document.getElementById('postContent').value = '';
-            document.getElementById('meetingPartner').value = '';
+            document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+            updateSelectedFriends();
             removeImage();
 
-            console.log('✅ 새 게시물 작성완료!');
+            try {
+                // Firebase에 저장
+                console.log('Firebase에 저장 시작');
+                await FirebaseManager.addPost(post);
+                console.log('✅ Firebase 저장 완료');
+                
+            } catch (error) {
+                console.error('Firebase 저장 실패:', error);
+                // 실패해도 로컬에는 이미 저장되어 있음
+                alert('게시물 저장에 실패했지만 로컬에는 저장되었습니다.');
+            }
         }
 
         function renderPostFeed() {
@@ -1879,7 +2025,9 @@
                     
                     <div class="post-content">
                         <span class="username">${post.author}</span>
-                        ${post.type === 'meeting' && post.partner ? 
+                        ${post.type === 'meeting' && post.partners ? 
+                            `<span style="color: #405de6;">@${post.partners.join(', @')}</span>와 함께 ` : 
+                            post.type === 'meeting' && post.partner ? 
                             `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
                         ${post.content}
                         ${post.type === 'meeting' ? ' 👥' : ' 📝'}
@@ -1889,19 +2037,45 @@
         }
 
         async function toggleLike(postId) {
+            console.log('좋아요 클릭:', postId);
+            
             const post = posts.find(p => p.id === postId);
-            if (!post) return;
+            if (!post) {
+                console.error('게시물을 찾을 수 없습니다:', postId);
+                return;
+            }
 
             const likeIndex = post.likes.indexOf(currentUser);
             let updatedLikes;
             
             if (likeIndex > -1) {
                 updatedLikes = post.likes.filter(user => user !== currentUser);
+                console.log('좋아요 취소');
             } else {
                 updatedLikes = [...post.likes, currentUser];
+                console.log('좋아요 추가');
             }
 
-            await FirebaseManager.updatePost(postId, { likes: updatedLikes });
+            // 즉시 UI 업데이트 (낙관적 업데이트)
+            post.likes = updatedLikes;
+            renderPostFeed();
+            renderProfile();
+
+            // Firebase 업데이트
+            try {
+                await FirebaseManager.updatePost(postId, { likes: updatedLikes });
+                console.log('✅ 좋아요 업데이트 완료');
+            } catch (error) {
+                console.error('좋아요 업데이트 실패:', error);
+                // 실패 시 원래 상태로 복구
+                if (likeIndex > -1) {
+                    post.likes = [...post.likes, currentUser];
+                } else {
+                    post.likes = post.likes.filter(user => user !== currentUser);
+                }
+                renderPostFeed();
+                renderProfile();
+            }
         }
 
         async function deletePost(postId) {
@@ -2320,6 +2494,17 @@
 
         function showProfile() {
             switchTab('profile');
+        }
+
+        function logout() {
+            if (confirm('정말 로그아웃 하시겠습니까?')) {
+                // 저장된 로그인 정보 삭제
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('lastLoginTime');
+                
+                // 페이지 새로고침으로 로그인 화면으로 이동
+                location.reload();
+            }
         }
 
         function openEditProfileModal() {
