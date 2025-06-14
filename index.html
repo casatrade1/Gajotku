@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>가조쿠 - 친구들만의 SNS</title>
     
-    <!-- Firebase SDK (버전 호환성 수정) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
@@ -291,7 +291,7 @@
             display: block;
         }
 
-        /* 인스타 포스트 스타일 */
+        /* 포스트 스타일 */
         .post {
             background: white;
             border: 1px solid #dbdbdb;
@@ -899,1323 +899,6 @@
                         <!-- 스토리가 여기에 생성됩니다 -->
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 왕비호 투표 모달 -->
-    <div id="bihoVoteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">👑 왕비호 투표</div>
-                <button class="close-btn" onclick="closeBihoVoteModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align: center; margin-bottom: 20px; color: #8e8e8e; font-size: 14px;">
-                    이번달 가장 맘에 안 드는 친구를 선택하세요 😈<br>
-                    <span style="color: #e91e63; font-weight: bold;">한 달에 한 번만 투표 가능!</span>
-                </div>
-                <div id="bihoVoteList"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 프로필 편집 모달 -->
-    <div id="editProfileModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">프로필 편집</div>
-                <button class="close-btn" onclick="closeEditProfileModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="edit-form">
-                    <div class="form-group">
-                        <label class="form-label">이름</label>
-                        <input type="text" class="form-input" id="editName" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">자기소개</label>
-                        <textarea class="form-textarea" id="editBio" placeholder="자신을 소개해보세요..."></textarea>
-                    </div>
-                    <button class="save-btn" onclick="saveProfile()">저장</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Firebase 설정 (실제 설정으로 업데이트됨!)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDVGZZ6JumYWpFF82d7RW-8DHmzqzNVGoo",
-            authDomain: "gazoku-91025.firebaseapp.com",
-            projectId: "gazoku-91025",
-            storageBucket: "gazoku-91025.firebasestorage.app",
-            messagingSenderId: "295977381584",
-            appId: "1:295977381584:web:f21ffb806ae7f82918b8d5"
-        };
-
-        // Firebase 초기화 및 오류 처리 개선
-        let db = null;
-        
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log('✅ Firebase 초기화 성공!');
-        } catch (error) {
-            console.error('❌ Firebase 초기화 실패:', error);
-            console.log('오프라인 모드로 실행합니다.');
-        }
-
-        // 데모용 설정 제거 및 실제 연결 확인
-        if (db) {
-            console.log('🔥 Firebase 실시간 데이터베이스 연결됨!');
-        }
-
-        // 친구 데이터
-        const friends = [
-            { name: "황승하", birthday: "2001-07-11" },
-            { name: "이서현", birthday: "2001-01-24" },
-            { name: "한희준", birthday: "2001-12-21" },
-            { name: "복지현", birthday: "2001-01-15" },
-            { name: "양정후", birthday: "2001-10-18" },
-            { name: "윤희태", birthday: "2001-10-15" },
-            { name: "곽도윤", birthday: "2001-07-31" },
-            { name: "강순건", birthday: "2001-04-18" },
-            { name: "양규현", birthday: "2001-04-19" },
-            { name: "이학준", birthday: "2002-02-22" },
-            { name: "강정현", birthday: "2001-08-07" },
-            { name: "박주호", birthday: "2001-06-01" },
-            { name: "전상혁", birthday: "2001-08-18" },
-            { name: "심재현", birthday: "2001-10-05" },
-            { name: "신민호", birthday: "2001-03-03" }
-        ];
-
-        let currentUser = null;
-        let selectedFriend = null;
-        let selectedPostType = 'diary';
-        let currentImageData = null;
-        let currentRankingTab = 'meeting';
-        let currentPostId = null;
-
-        // 로컬 캐시 (오프라인 지원용)
-        let posts = [];
-        let profiles = {};
-        let bihoVotes = {};
-        let comments = {};
-
-        // Firebase 데이터 관리 (오류 처리 강화)
-        class FirebaseManager {
-            // 게시물 관련
-            static async addPost(post) {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 저장');
-                    posts.unshift(post);
-                    localStorage.setItem('posts', JSON.stringify(posts));
-                    return true;
-                }
-
-                try {
-                    await db.collection('posts').add(post);
-                    console.log('✅ 게시물이 Firebase에 저장됨');
-                    return true;
-                } catch (error) {
-                    console.error('포스트 저장 실패:', error);
-                    // 로컬 저장으로 폴백
-                    posts.unshift(post);
-                    localStorage.setItem('posts', JSON.stringify(posts));
-                    return true;
-                }
-            }
-
-            static async getPosts() {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 데이터 로드');
-                    posts = JSON.parse(localStorage.getItem('posts') || '[]');
-                    return posts;
-                }
-
-                try {
-                    const snapshot = await db.collection('posts').orderBy('date', 'desc').get();
-                    const firestorePosts = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    posts = firestorePosts;
-                    console.log(`✅ Firebase에서 ${posts.length}개 게시물 로드됨`);
-                    return firestorePosts;
-                } catch (error) {
-                    console.error('포스트 로드 실패:', error);
-                    // 로컬 데이터로 폴백
-                    posts = JSON.parse(localStorage.getItem('posts') || '[]');
-                    return posts;
-                }
-            }
-
-            static async updatePost(postId, updates) {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 업데이트');
-                    const postIndex = posts.findIndex(p => p.id === postId);
-                    if (postIndex !== -1) {
-                        posts[postIndex] = { ...posts[postIndex], ...updates };
-                        localStorage.setItem('posts', JSON.stringify(posts));
-                    }
-                    return true;
-                }
-
-                try {
-                    await db.collection('posts').doc(postId).update(updates);
-                    console.log('✅ 게시물 업데이트 완료');
-                    return true;
-                } catch (error) {
-                    console.error('포스트 업데이트 실패:', error);
-                    // 로컬 업데이트로 폴백
-                    const postIndex = posts.findIndex(p => p.id === postId);
-                    if (postIndex !== -1) {
-                        posts[postIndex] = { ...posts[postIndex], ...updates };
-                        localStorage.setItem('posts', JSON.stringify(posts));
-                    }
-                    return true;
-                }
-            }
-
-            static async deletePost(postId) {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 삭제');
-                    posts = posts.filter(p => p.id !== postId);
-                    localStorage.setItem('posts', JSON.stringify(posts));
-                    return true;
-                }
-
-                try {
-                    await db.collection('posts').doc(postId).delete();
-                    console.log('✅ 게시물 삭제 완료');
-                    return true;
-                } catch (error) {
-                    console.error('포스트 삭제 실패:', error);
-                    // 로컬 삭제로 폴백
-                    posts = posts.filter(p => p.id !== postId);
-                    localStorage.setItem('posts', JSON.stringify(posts));
-                    return true;
-                }
-            }
-
-            // 댓글 관련
-            static async addComment(postId, comment) {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 댓글 저장');
-                    if (!comments[postId]) comments[postId] = [];
-                    comments[postId].push(comment);
-                    localStorage.setItem('comments', JSON.stringify(comments));
-                    return true;
-                }
-
-                try {
-                    await db.collection('comments').add({
-                        postId: postId,
-                        ...comment
-                    });
-                    console.log('✅ 댓글이 Firebase에 저장됨');
-                    return true;
-                } catch (error) {
-                    console.error('댓글 저장 실패:', error);
-                    // 로컬 저장으로 폴백
-                    if (!comments[postId]) comments[postId] = [];
-                    comments[postId].push(comment);
-                    localStorage.setItem('comments', JSON.stringify(comments));
-                    return true;
-                }
-            }
-
-            static async getComments() {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 댓글 로드');
-                    comments = JSON.parse(localStorage.getItem('comments') || '{}');
-                    return comments;
-                }
-
-                try {
-                    const snapshot = await db.collection('comments').get();
-                    const firestoreComments = {};
-                    snapshot.docs.forEach(doc => {
-                        const data = doc.data();
-                        if (!firestoreComments[data.postId]) {
-                            firestoreComments[data.postId] = [];
-                        }
-                        firestoreComments[data.postId].push({
-                            id: doc.id,
-                            author: data.author,
-                            text: data.text,
-                            date: data.date
-                        });
-                    });
-                    comments = firestoreComments;
-                    console.log('✅ Firebase에서 댓글 로드됨');
-                    return firestoreComments;
-                } catch (error) {
-                    console.error('댓글 로드 실패:', error);
-                    comments = JSON.parse(localStorage.getItem('comments') || '{}');
-                    return comments;
-                }
-            }
-
-            // 왕비호 투표 관련
-            static async updateBihoVotes(monthKey, voteData) {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 투표 저장');
-                    bihoVotes[monthKey] = voteData;
-                    localStorage.setItem('bihoVotes', JSON.stringify(bihoVotes));
-                    return true;
-                }
-
-                try {
-                    await db.collection('bihoVotes').doc(monthKey).set(voteData);
-                    console.log('✅ 왕비호 투표가 Firebase에 저장됨');
-                    return true;
-                } catch (error) {
-                    console.error('왕비호 투표 저장 실패:', error);
-                    // 로컬 저장으로 폴백
-                    bihoVotes[monthKey] = voteData;
-                    localStorage.setItem('bihoVotes', JSON.stringify(bihoVotes));
-                    return true;
-                }
-            }
-
-            static async getBihoVotes() {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 투표 로드');
-                    bihoVotes = JSON.parse(localStorage.getItem('bihoVotes') || '{}');
-                    return bihoVotes;
-                }
-
-                try {
-                    const snapshot = await db.collection('bihoVotes').get();
-                    const firestoreBihoVotes = {};
-                    snapshot.docs.forEach(doc => {
-                        firestoreBihoVotes[doc.id] = doc.data();
-                    });
-                    bihoVotes = firestoreBihoVotes;
-                    console.log('✅ Firebase에서 왕비호 투표 로드됨');
-                    return firestoreBihoVotes;
-                } catch (error) {
-                    console.error('왕비호 투표 로드 실패:', error);
-                    bihoVotes = JSON.parse(localStorage.getItem('bihoVotes') || '{}');
-                    return bihoVotes;
-                }
-            }
-
-            // 프로필 관련
-            static async updateProfile(userId, profileData) {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 프로필 저장');
-                    profiles[userId] = profileData;
-                    localStorage.setItem('profiles', JSON.stringify(profiles));
-                    return true;
-                }
-
-                try {
-                    await db.collection('profiles').doc(userId).set(profileData);
-                    console.log('✅ 프로필이 Firebase에 저장됨');
-                    return true;
-                } catch (error) {
-                    console.error('프로필 저장 실패:', error);
-                    // 로컬 저장으로 폴백
-                    profiles[userId] = profileData;
-                    localStorage.setItem('profiles', JSON.stringify(profiles));
-                    return true;
-                }
-            }
-
-            static async getProfiles() {
-                if (!db) {
-                    console.log('오프라인 모드: 로컬 프로필 로드');
-                    profiles = JSON.parse(localStorage.getItem('profiles') || '{}');
-                    return profiles;
-                }
-
-                try {
-                    const snapshot = await db.collection('profiles').get();
-                    const firestoreProfiles = {};
-                    snapshot.docs.forEach(doc => {
-                        firestoreProfiles[doc.id] = doc.data();
-                    });
-                    profiles = firestoreProfiles;
-                    console.log('✅ Firebase에서 프로필 로드됨');
-                    return firestoreProfiles;
-                } catch (error) {
-                    console.error('프로필 로드 실패:', error);
-                    profiles = JSON.parse(localStorage.getItem('profiles') || '{}');
-                    return profiles;
-                }
-            }
-        }
-
-        // 실시간 업데이트 리스너 설정
-        function setupRealtimeListeners() {
-            if (!db) return;
-
-            try {
-                // 게시물 실시간 업데이트
-                db.collection('posts').onSnapshot((snapshot) => {
-                    const updatedPosts = [];
-                    snapshot.docs.forEach(doc => {
-                        updatedPosts.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    posts = updatedPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    if (document.getElementById('postFeed')) {
-                        renderPostFeed();
-                        renderStories();
-                    }
-                });
-
-                // 댓글 실시간 업데이트
-                db.collection('comments').onSnapshot((snapshot) => {
-                    const updatedComments = {};
-                    snapshot.docs.forEach(doc => {
-                        const data = doc.data();
-                        if (!updatedComments[data.postId]) {
-                            updatedComments[data.postId] = [];
-                        }
-                        updatedComments[data.postId].push({
-                            id: doc.id,
-                            author: data.author,
-                            text: data.text,
-                            date: data.date
-                        });
-                    });
-                    comments = updatedComments;
-                    if (currentPostId && document.getElementById('commentModal').classList.contains('active')) {
-                        renderComments(currentPostId);
-                    }
-                    if (document.getElementById('postFeed')) {
-                        renderPostFeed();
-                    }
-                });
-
-                // 왕비호 투표 실시간 업데이트
-                db.collection('bihoVotes').onSnapshot((snapshot) => {
-                    const updatedBihoVotes = {};
-                    snapshot.docs.forEach(doc => {
-                        updatedBihoVotes[doc.id] = doc.data();
-                    });
-                    bihoVotes = updatedBihoVotes;
-                    if (currentRankingTab === 'biho' && document.getElementById('search').classList.contains('active')) {
-                        renderRanking();
-                    }
-                });
-
-                console.log('실시간 리스너 설정 완료! 🔥');
-            } catch (error) {
-                console.log('실시간 리스너 설정 실패 (오프라인 모드):', error);
-            }
-        }
-
-        // 왕비호 투표 초기화
-        async function initializeBihoVotes() {
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
-            
-            if (!bihoVotes[currentMonth]) {
-                const initialVotes = {
-                    votes: {},
-                    voters: {}
-                };
-                
-                // 모든 친구들에 대해 0표로 초기화
-                friends.forEach(friend => {
-                    initialVotes.votes[friend.name] = 0;
-                });
-                
-                await FirebaseManager.updateBihoVotes(currentMonth, initialVotes);
-            }
-        }
-
-        // 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            renderFriendGrid();
-            setupEventListeners();
-        });
-
-        function renderFriendGrid() {
-            const grid = document.getElementById('friendGrid');
-            grid.innerHTML = friends.map(friend => `
-                <div class="friend-card" data-name="${friend.name}" onclick="selectFriend('${friend.name}')">
-                    <div class="friend-name">${friend.name}</div>
-                    <div class="friend-birthday">${formatBirthday(friend.birthday)}</div>
-                </div>
-            `).join('');
-        }
-
-        function selectFriend(name) {
-            document.querySelectorAll('.friend-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            const selectedCard = document.querySelector(`[data-name="${name}"]`);
-            selectedCard.classList.add('selected');
-            selectedFriend = name;
-
-            document.getElementById('loginBtn').disabled = false;
-        }
-
-        function setupEventListeners() {
-            document.getElementById('loginBtn').addEventListener('click', login);
-        }
-
-        async function login() {
-            if (!selectedFriend) return;
-            
-            currentUser = selectedFriend;
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            
-            // 로딩 표시
-            showLoadingMessage();
-            
-            await initializeApp();
-        }
-
-        function showLoadingMessage() {
-            const content = document.querySelector('.content');
-            content.innerHTML = `
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; gap: 20px;">
-                    <div style="font-size: 24px;">🔥</div>
-                    <div style="font-size: 18px; font-weight: bold;">가조쿠 로딩중...</div>
-                    <div style="font-size: 14px; color: #8e8e8e;">친구들과 실시간 연결하는 중이에요!</div>
-                </div>
-            `;
-        }
-
-        async function initializeApp() {
-            try {
-                // Firebase 데이터 로드
-                await Promise.all([
-                    FirebaseManager.getPosts(),
-                    FirebaseManager.getComments(),
-                    FirebaseManager.getBihoVotes(),
-                    FirebaseManager.getProfiles()
-                ]);
-
-                // 실시간 리스너 설정
-                setupRealtimeListeners();
-
-                // UI 초기화
-                setupSelectOptions();
-                updateProfilePics();
-                renderBirthdayBanner();
-                renderStories();
-                renderPostFeed();
-                renderRanking();
-                renderProfile();
-                await initializeBihoVotes();
-
-                console.log('✅ 가조쿠 초기화 완료! 친구들과 실시간 연결됨 🔥');
-            } catch (error) {
-                console.error('초기화 오류:', error);
-                // 오프라인 모드로 폴백
-                console.log('오프라인 모드로 실행합니다.');
-            }
-        }
-
-        function setupSelectOptions() {
-            const meetingSelect = document.getElementById('meetingPartner');
-            const options = friends
-                .filter(f => f.name !== currentUser)
-                .map(f => `<option value="${f.name}">${f.name}</option>`)
-                .join('');
-            
-            meetingSelect.innerHTML = '<option value="">만난 친구 선택</option>' + options;
-        }
-
-        function updateProfilePics() {
-            const initials = currentUser.substring(0, 2);
-            document.getElementById('createProfilePic').textContent = initials;
-            document.getElementById('profilePicLarge').textContent = initials;
-            document.getElementById('profileName').textContent = currentUser;
-            document.getElementById('editName').value = currentUser;
-            
-            // 댓글용 프로필 사진도 업데이트
-            const commentProfilePic = document.getElementById('commentProfilePic');
-            if (commentProfilePic) {
-                commentProfilePic.textContent = initials;
-            }
-            
-            // 저장된 프로필 정보 로드
-            const userProfile = profiles[currentUser] || {};
-            document.getElementById('profileBio').textContent = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
-            document.getElementById('editBio').value = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
-        }
-
-        function renderBirthdayBanner() {
-            const nextBirthday = getNextBirthday();
-            document.getElementById('birthdayBanner').innerHTML = 
-                `🎂 ${nextBirthday.name}님의 생일까지 ${nextBirthday.daysUntil}일 남았어요!`;
-        }
-
-        function renderStories() {
-            const today = new Date().toDateString();
-            const todayPosts = posts.filter(post => 
-                new Date(post.date).toDateString() === today
-            );
-
-            // 오늘 활동한 친구들의 스토리 생성
-            const activeUsers = [...new Set(todayPosts.map(post => post.author))];
-            
-            const storiesHtml = activeUsers.map(user => {
-                const userPosts = todayPosts.filter(post => post.author === user);
-                const hasMeeting = userPosts.some(post => post.type === 'meeting');
-                const hasDiary = userPosts.some(post => post.type === 'diary');
-                
-                return `
-                    <div class="story-item" onclick="viewStory('${user}')">
-                        <div class="story-ring ${user === currentUser ? 'viewed' : ''}">
-                            <div class="story-pic">${user.substring(0, 2)}</div>
-                            ${hasMeeting ? '<div class="story-badge meeting">👥</div>' : ''}
-                            ${hasDiary && !hasMeeting ? '<div class="story-badge diary">📝</div>' : ''}
-                        </div>
-                        <div class="story-username">${user}</div>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('storiesContainer').innerHTML = storiesHtml;
-        }
-
-        function viewStory(userName) {
-            const today = new Date().toDateString();
-            const userTodayPosts = posts.filter(post => 
-                post.author === userName && new Date(post.date).toDateString() === today
-            );
-
-            if (userTodayPosts.length === 0) return;
-
-            let storyContent = `<h3>${userName}님의 오늘</h3><br>`;
-            userTodayPosts.forEach(post => {
-                const type = post.type === 'meeting' ? '👥 만남' : '📝 일기';
-                storyContent += `<strong>${type}</strong><br>${post.content}<br><br>`;
-                if (post.partner) {
-                    storyContent += `<em>@${post.partner}님과 함께</em><br><br>`;
-                }
-            });
-
-            document.getElementById('likesModalBody').innerHTML = storyContent;
-            document.getElementById('likesModal').querySelector('.modal-title').textContent = '오늘의 스토리';
-            document.getElementById('likesModal').classList.add('active');
-        }
-
-        function switchTab(tabName) {
-            // 네비게이션 활성화
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-            // 컨텐츠 표시
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(tabName).classList.add('active');
-
-            // 탭별 업데이트
-            if (tabName === 'search') {
-                renderRanking();
-            } else if (tabName === 'profile') {
-                renderProfile();
-            } else if (tabName === 'home') {
-                renderStories();
-            }
-        }
-
-        function selectPostType(type) {
-            selectedPostType = type;
-            
-            // 버튼 활성화
-            document.querySelectorAll('.type-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`[data-type="${type}"]`).classList.add('active');
-
-            // 만남 선택기 표시/숨김
-            const meetingSelector = document.getElementById('meetingSelector');
-            if (type === 'meeting') {
-                meetingSelector.classList.add('active');
-                document.getElementById('postContent').placeholder = '오늘 누구와 만났나요? 어떤 시간을 보내셨나요?';
-            } else {
-                meetingSelector.classList.remove('active');
-                document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
-            }
-        }
-
-        function previewImage(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentImageData = e.target.result;
-                document.getElementById('imagePreview').innerHTML = `
-                    <div class="image-preview">
-                        <img src="${currentImageData}" class="preview-img" alt="미리보기">
-                        <button class="remove-img" onclick="removeImage()">&times;</button>
-                    </div>
-                `;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function removeImage() {
-            currentImageData = null;
-            document.getElementById('imagePreview').innerHTML = '';
-            document.getElementById('imageInput').value = '';
-        }
-
-        async function createPost() {
-            const content = document.getElementById('postContent').value.trim();
-            
-            if (!content) {
-                alert('내용을 입력해주세요!');
-                return;
-            }
-
-            if (selectedPostType === 'meeting') {
-                const partner = document.getElementById('meetingPartner').value;
-                if (!partner) {
-                    alert('만난 친구를 선택해주세요!');
-                    return;
-                }
-            }
-
-            const post = {
-                id: Date.now().toString(),
-                author: currentUser,
-                content: content,
-                type: selectedPostType,
-                partner: selectedPostType === 'meeting' ? document.getElementById('meetingPartner').value : null,
-                image: currentImageData,
-                likes: [],
-                date: new Date().toISOString()
-            };
-
-            // Firebase에 저장
-            await FirebaseManager.addPost(post);
-
-            // 폼 초기화
-            document.getElementById('postContent').value = '';
-            document.getElementById('meetingPartner').value = '';
-            removeImage();
-
-            console.log('✅ 새 게시물이 친구들과 실시간 공유되었습니다!');
-        }
-
-        function renderPostFeed() {
-            const feed = document.getElementById('postFeed');
-            
-            feed.innerHTML = posts.map(post => `
-                <div class="post">
-                    <div class="post-header">
-                        <div class="post-user">
-                            <div class="profile-pic">${post.author.substring(0, 2)}</div>
-                            <div class="user-info">
-                                <h4>${post.author}</h4>
-                                <div class="post-time">${formatTimeAgo(post.date)}</div>
-                            </div>
-                        </div>
-                        ${post.author === currentUser ? `
-                            <button class="delete-btn" onclick="deletePost('${post.id}')">삭제</button>
-                        ` : ''}
-                    </div>
-                    
-                    ${post.image ? `
-                        <img src="${post.image}" class="post-image" alt="게시물 이미지">
-                    ` : ''}
-                    
-                    <div class="post-actions">
-                        <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
-                                onclick="toggleLike('${post.id}')">
-                            ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
-                        </button>
-                        <button class="action-btn" onclick="openCommentModal('${post.id}')">💬</button>
-                        <button class="action-btn" onclick="sharePost('${post.id}')">📤</button>
-                    </div>
-                    
-                    ${post.likes.length > 0 ? `
-                        <div class="post-likes" onclick="showLikes('${post.id}')">
-                            좋아요 ${post.likes.length}개
-                        </div>
-                    ` : ''}
-                    
-                    ${comments[post.id] && comments[post.id].length > 0 ? `
-                        <div style="padding: 0 16px; margin-bottom: 8px;">
-                            <span style="color: #8e8e8e; font-size: 14px; cursor: pointer;" onclick="openCommentModal('${post.id}')">
-                                댓글 ${comments[post.id].length}개 모두 보기
-                            </span>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="post-content">
-                        <span class="username">${post.author}</span>
-                        ${post.type === 'meeting' && post.partner ? 
-                            `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
-                        ${post.content}
-                        ${post.type === 'meeting' ? ' 👥' : ' 📝'}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function toggleLike(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            const likeIndex = post.likes.indexOf(currentUser);
-            let updatedLikes;
-            
-            if (likeIndex > -1) {
-                updatedLikes = post.likes.filter(user => user !== currentUser);
-            } else {
-                updatedLikes = [...post.likes, currentUser];
-            }
-
-            // Firebase 업데이트
-            await FirebaseManager.updatePost(postId, { likes: updatedLikes });
-        }
-
-        async function deletePost(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            if (post.author !== currentUser) {
-                alert('자신의 게시물만 삭제할 수 있습니다!');
-                return;
-            }
-
-            if (confirm('정말 삭제하시겠습니까?')) {
-                await FirebaseManager.deletePost(postId);
-                console.log('✅ 게시물이 모든 친구들에게서 삭제되었습니다!');
-            }
-        }
-
-        function showLikes(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (!post || post.likes.length === 0) return;
-
-            const likesHtml = post.likes.map(user => `
-                <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
-                    <div class="profile-pic">${user.substring(0, 2)}</div>
-                    <div style="font-weight: 500;">${user}</div>
-                </div>
-            `).join('');
-
-            document.getElementById('likesModalBody').innerHTML = likesHtml;
-            document.getElementById('likesModal').querySelector('.modal-title').textContent = '좋아요';
-            document.getElementById('likesModal').classList.add('active');
-        }
-
-        function closeLikesModal() {
-            document.getElementById('likesModal').classList.remove('active');
-        }
-
-        function showRankingTab(tab) {
-            currentRankingTab = tab;
-            
-            // 탭 활성화
-            document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[onclick="showRankingTab('${tab}')"]`).classList.add('active');
-            
-            renderRanking();
-        }
-
-        function renderRanking() {
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            let content = '';
-
-            if (currentRankingTab === 'meeting') {
-                // 이번달 만남 랭킹
-                const monthlyMeetings = posts.filter(post => {
-                    const postDate = new Date(post.date);
-                    return post.type === 'meeting' && 
-                           postDate.getMonth() === currentMonth && 
-                           postDate.getFullYear() === currentYear;
-                });
-
-                const meetingCounts = {};
-                friends.forEach(friend => meetingCounts[friend.name] = 0);
-
-                monthlyMeetings.forEach(post => {
-                    meetingCounts[post.author]++;
-                    if (post.partner) {
-                        meetingCounts[post.partner]++;
-                    }
-                });
-
-                const meetingRanking = Object.entries(meetingCounts)
-                    .map(([name, count]) => ({ name, count }))
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, 10);
-
-                content = `
-                    <div class="ranking-card">
-                        <div class="ranking-title">👥 이번달 만남킹 랭킹</div>
-                        ${meetingRanking.map((item, index) => `
-                            <div class="ranking-item">
-                                <span class="rank-position">${index + 1}위</span>
-                                <span>${item.name}</span>
-                                <span>${item.count}번</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else if (currentRankingTab === 'popular') {
-                // 이번달 인기글
-                const monthlyPosts = posts.filter(post => {
-                    const postDate = new Date(post.date);
-                    return postDate.getMonth() === currentMonth && 
-                           postDate.getFullYear() === currentYear;
-                });
-
-                const popularPosts = monthlyPosts
-                    .sort((a, b) => b.likes.length - a.likes.length)
-                    .slice(0, 5);
-
-                content = `
-                    <div class="ranking-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <div class="ranking-title">🔥 이번달 인기글 TOP 5</div>
-                        ${popularPosts.map((post, index) => `
-                            <div class="ranking-item" style="flex-direction: column; align-items: stretch; padding: 12px 0;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <span class="rank-position">${index + 1}위</span>
-                                    <span>${post.author}</span>
-                                    <span>❤️ ${post.likes.length}</span>
-                                </div>
-                                <div style="font-size: 12px; opacity: 0.8; line-height: 1.3;">
-                                    ${post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else if (currentRankingTab === 'biho') {
-                // 왕비호 랭킹
-                const now = new Date();
-                const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
-                
-                // 초기화가 안되어 있다면 지금 초기화
-                if (!bihoVotes[currentMonth]) {
-                    initializeBihoVotes();
-                }
-                
-                const currentVotes = bihoVotes[currentMonth] || { votes: {}, voters: {} };
-                const bihoRanking = Object.entries(currentVotes.votes || {})
-                    .map(([name, votes]) => ({ name, votes }))
-                    .sort((a, b) => b.votes - a.votes);
-
-                const hasVoted = currentVotes.voters && currentVotes.voters[currentUser];
-
-                content = `
-                    <div class="ranking-card" style="background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);">
-                        <div class="ranking-title">👑 이번달 왕비호 랭킹</div>
-                        <div style="text-align: center; margin-bottom: 16px; font-size: 12px; opacity: 0.8;">
-                            ${now.getMonth() + 1}월 왕비호 투표 현황
-                        </div>
-                        ${bihoRanking.filter(item => item.votes > 0).length === 0 ? `
-                            <div style="text-align: center; padding: 20px; opacity: 0.7;">
-                                아직 투표가 없어요<br>첫 투표의 주인공이 되어보세요! 😈
-                            </div>
-                        ` : bihoRanking.filter(item => item.votes > 0).map((item, index) => `
-                            <div class="ranking-item">
-                                <div style="display: flex; align-items: center;">
-                                    <span class="rank-position">${index + 1}위</span>
-                                    ${index === 0 ? '<span class="biho-crown">👑</span>' : ''}
-                                    <span>${item.name}</span>
-                                </div>
-                                <span>${item.votes}표</span>
-                            </div>
-                        `).join('')}
-                        
-                        <div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
-                            ${hasVoted ? 
-                                '<span style="font-size: 12px; opacity: 0.7;">이번달 투표 완료! 👍</span>' : 
-                                '<button class="vote-btn" onclick="openBihoVoteModal()">투표하러 가기</button>'
-                            }
-                        </div>
-                    </div>
-                `;
-            } else if (currentRankingTab === 'stats') {
-                // 전체 통계
-                const totalPosts = posts.length;
-                const totalMeetings = posts.filter(p => p.type === 'meeting').length;
-                const totalLikes = posts.reduce((sum, p) => sum + p.likes.length, 0);
-                const mostActiveUser = friends.reduce((max, friend) => {
-                    const friendPosts = posts.filter(p => p.author === friend.name).length;
-                    return friendPosts > max.count ? { name: friend.name, count: friendPosts } : max;
-                }, { name: '', count: 0 });
-
-                content = `
-                    <div class="ranking-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <div class="ranking-title">📊 가조쿠 전체 통계</div>
-                        <div class="ranking-item">
-                            <span>총 게시물</span>
-                            <span>${totalPosts}개</span>
-                        </div>
-                        <div class="ranking-item">
-                            <span>총 만남</span>
-                            <span>${totalMeetings}번</span>
-                        </div>
-                        <div class="ranking-item">
-                            <span>총 좋아요</span>
-                            <span>${totalLikes}개</span>
-                        </div>
-                        <div class="ranking-item">
-                            <span>최고 활동러</span>
-                            <span>${mostActiveUser.name} (${mostActiveUser.count}개)</span>
-                        </div>
-                    </div>
-                `;
-            }
-
-            document.getElementById('rankingContent').innerHTML = content;
-        }
-
-        function renderProfile() {
-            const userPosts = posts.filter(post => post.author === currentUser);
-            const userMeetings = posts.filter(post => 
-                post.type === 'meeting' && (post.author === currentUser || post.partner === currentUser)
-            );
-            const userLikes = posts.reduce((total, post) => {
-                return total + (post.author === currentUser ? post.likes.length : 0);
-            }, 0);
-
-            document.getElementById('postCount').textContent = userPosts.length;
-            document.getElementById('meetingCount').textContent = userMeetings.length;
-            document.getElementById('likeCount').textContent = userLikes;
-
-            // 내 게시물 표시
-            document.getElementById('myPosts').innerHTML = `
-                <div style="padding: 16px;">
-                    <h3 style="margin-bottom: 16px; text-align: center;">내 게시물</h3>
-                    ${userPosts.length === 0 ? `
-                        <div style="text-align: center; color: #8e8e8e; margin: 40px 0;">
-                            아직 게시물이 없어요<br>
-                            첫 번째 게시물을 작성해보세요!
-                        </div>
-                    ` : userPosts.map(post => `
-                        <div class="post" style="margin-bottom: 16px;">
-                            <div class="post-header">
-                                <div class="post-user">
-                                    <div class="profile-pic">${post.author.substring(0, 2)}</div>
-                                    <div class="user-info">
-                                        <h4>${post.author}</h4>
-                                        <div class="post-time">${formatTimeAgo(post.date)}</div>
-                                    </div>
-                                </div>
-                                <button class="delete-btn" onclick="deletePost('${post.id}')">삭제</button>
-                            </div>
-                            
-                            ${post.image ? `
-                                <img src="${post.image}" class="post-image" alt="게시물 이미지">
-                            ` : ''}
-                            
-                            <div class="post-actions">
-                                <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
-                                        onclick="toggleLike('${post.id}')">
-                                    ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
-                                </button>
-                            </div>
-                            
-                            ${post.likes.length > 0 ? `
-                                <div class="post-likes" onclick="showLikes('${post.id}')">
-                                    좋아요 ${post.likes.length}개
-                                </div>
-                            ` : ''}
-                            
-                            <div class="post-content">
-                                <span class="username">${post.author}</span>
-                                ${post.type === 'meeting' && post.partner ? 
-                                    `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
-                                ${post.content}
-                                ${post.type === 'meeting' ? ' 👥' : ' 📝'}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        // 댓글 기능
-        function openCommentModal(postId) {
-            currentPostId = postId;
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-
-            renderComments(postId);
-            document.getElementById('commentModal').classList.add('active');
-            
-            // 프로필 사진 업데이트
-            document.getElementById('commentProfilePic').textContent = currentUser.substring(0, 2);
-        }
-
-        function closeCommentModal() {
-            document.getElementById('commentModal').classList.remove('active');
-            document.getElementById('commentInput').value = '';
-            currentPostId = null;
-        }
-
-        function renderComments(postId) {
-            const postComments = comments[postId] || [];
-            const commentsHtml = postComments.map(comment => `
-                <div class="comment-item">
-                    <div class="profile-pic">${comment.author.substring(0, 2)}</div>
-                    <div class="comment-content">
-                        <div class="comment-author">${comment.author}</div>
-                        <div class="comment-text">${comment.text}</div>
-                        <div class="comment-time">${formatTimeAgo(comment.date)}</div>
-                    </div>
-                    ${comment.author === currentUser ? `
-                        <button class="comment-delete" onclick="deleteComment('${postId}', '${comment.id}')">삭제</button>
-                    ` : ''}
-                </div>
-            `).join('');
-
-            document.getElementById('commentsList').innerHTML = postComments.length === 0 ? 
-                '<div style="text-align: center; color: #8e8e8e; padding: 20px;">첫 번째 댓글을 남겨보세요!</div>' : 
-                commentsHtml;
-        }
-
-        async function addComment() {
-            if (!currentPostId) return;
-            
-            const commentText = document.getElementById('commentInput').value.trim();
-            if (!commentText) return;
-
-            const comment = {
-                id: Date.now().toString(),
-                author: currentUser,
-                text: commentText,
-                date: new Date().toISOString()
-            };
-
-            // Firebase에 저장
-            await FirebaseManager.addComment(currentPostId, comment);
-
-            document.getElementById('commentInput').value = '';
-            console.log('✅ 댓글이 친구들과 실시간 공유되었습니다!');
-        }
-
-        async function deleteComment(postId, commentId) {
-            try {
-                await db.collection('comments').doc(commentId).delete();
-                console.log('✅ 댓글이 삭제되었습니다!');
-            } catch (error) {
-                console.error('댓글 삭제 실패:', error);
-                // 로컬 삭제로 폴백
-                if (comments[postId]) {
-                    comments[postId] = comments[postId].filter(c => c.id !== commentId);
-                    localStorage.setItem('comments', JSON.stringify(comments));
-                    renderComments(postId);
-                    renderPostFeed();
-                }
-            }
-        }
-
-        function handleCommentKeyPress(event) {
-            if (event.key === 'Enter') {
-                addComment();
-            }
-        }
-
-        function sharePost(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-            
-            const shareText = `${post.author}님의 게시물을 확인해보세요!\n\n"${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}"`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: '가조쿠 게시물',
-                    text: shareText
-                });
-            } else {
-                // 클립보드에 복사
-                navigator.clipboard.writeText(shareText).then(() => {
-                    alert('게시물 내용이 클립보드에 복사되었습니다!');
-                }).catch(() => {
-                    alert('공유하기: ' + shareText);
-                });
-            }
-        }
-
-        // 왕비호 투표 함수들
-        function openBihoVoteModal() {
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
-            const currentVotes = bihoVotes[currentMonth] || { votes: {}, voters: {} };
-            
-            // 이미 투표했는지 확인
-            if (currentVotes.voters && currentVotes.voters[currentUser]) {
-                alert('이번달에 이미 투표하셨습니다! 다음달을 기다려주세요 😊');
-                return;
-            }
-
-            // 투표 가능한 친구들 (자신 제외)
-            const votableFriends = friends.filter(f => f.name !== currentUser);
-            
-            const voteListHtml = votableFriends.map(friend => `
-                <div class="biho-vote-item">
-                    <div class="biho-vote-info">
-                        <div class="profile-pic">${friend.name.substring(0, 2)}</div>
-                        <div>
-                            <div style="font-weight: 600;">${friend.name}</div>
-                            <div style="font-size: 12px; color: #8e8e8e;">현재 ${currentVotes.votes[friend.name] || 0}표</div>
-                        </div>
-                    </div>
-                    <button class="vote-btn" onclick="voteBiho('${friend.name}')">투표</button>
-                </div>
-            `).join('');
-
-            document.getElementById('bihoVoteList').innerHTML = voteListHtml;
-            document.getElementById('bihoVoteModal').classList.add('active');
-        }
-
-        function closeBihoVoteModal() {
-            document.getElementById('bihoVoteModal').classList.remove('active');
-        }
-
-        async function voteBiho(targetName) {
-            if (confirm(`정말 ${targetName}님에게 투표하시겠습니까? 😈\n이번달에는 다시 투표할 수 없어요!`)) {
-                const now = new Date();
-                const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
-                
-                if (!bihoVotes[currentMonth]) {
-                    await initializeBihoVotes();
-                }
-                
-                const currentVotes = { ...bihoVotes[currentMonth] };
-                currentVotes.votes[targetName]++;
-                currentVotes.voters[currentUser] = true;
-                
-                // Firebase 업데이트
-                await FirebaseManager.updateBihoVotes(currentMonth, currentVotes);
-                
-                closeBihoVoteModal();
-                
-                alert(`${targetName}님에게 투표 완료! 👑\n결과는 랭킹에서 확인하세요!`);
-                console.log('✅ 왕비호 투표가 친구들과 실시간 공유되었습니다!');
-            }
-        }
-
-        function openCreateModal() {
-            // 포스트 작성 영역으로 스크롤
-            switchTab('home');
-            setTimeout(() => {
-                document.querySelector('.create-post').scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-                document.getElementById('postContent').focus();
-            }, 100);
-        }
-
-        function showProfile() {
-            switchTab('profile');
-        }
-
-        function openEditProfileModal() {
-            document.getElementById('editProfileModal').classList.add('active');
-        }
-
-        function closeEditProfileModal() {
-            document.getElementById('editProfileModal').classList.remove('active');
-        }
-
-        async function saveProfile() {
-            const bio = document.getElementById('editBio').value.trim();
-            
-            const profileData = {
-                bio: bio || '안녕하세요! 가조쿠의 일원입니다 ✨'
-            };
-            
-            // Firebase에 저장
-            await FirebaseManager.updateProfile(currentUser, profileData);
-            
-            document.getElementById('profileBio').textContent = profileData.bio;
-            closeEditProfileModal();
-            
-            console.log('✅ 프로필이 친구들과 실시간 공유되었습니다!');
-        }
-
-        // 유틸리티 함수들
-        function formatBirthday(birthday) {
-            const date = new Date(birthday);
-            return `${date.getMonth() + 1}월 ${date.getDate()}일`;
-        }
-
-        function getDaysUntilBirthday(birthday) {
-            const today = new Date();
-            const birthDate = new Date(birthday);
-            birthDate.setFullYear(today.getFullYear());
-            
-            if (birthDate < today) {
-                birthDate.setFullYear(today.getFullYear() + 1);
-            }
-            
-            const diffTime = birthDate - today;
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
-
-        function getNextBirthday() {
-            return friends
-                .map(friend => ({
-                    ...friend,
-                    daysUntil: getDaysUntilBirthday(friend.birthday)
-                }))
-                .sort((a, b) => a.daysUntil - b.daysUntil)[0];
-        }
-
-        function formatTimeAgo(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffTime = now - date;
-            const diffMinutes = Math.floor(diffTime / (1000 * 60));
-            const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (diffMinutes < 1) {
-                return '방금 전';
-            } else if (diffMinutes < 60) {
-                return `${diffMinutes}분 전`;
-            } else if (diffHours < 24) {
-                return `${diffHours}시간 전`;
-            } else if (diffDays === 1) {
-                return '어제';
-            } else if (diffDays < 7) {
-                return `${diffDays}일 전`;
-            } else {
-                return `${date.getMonth() + 1}월 ${date.getDate()}일`;
-            }
-        }
-
-        // 모달 외부 클릭시 닫기
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal')) {
-                e.target.classList.remove('active');
-            }
-        });
-
-        // 키보드 ESC로 모달 닫기
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.classList.remove('active');
-                });
-            }
-        });
-    </script>
-</body>
-</html>
 
                 <!-- 포스트 작성 -->
                 <div class="create-post">
@@ -2333,3 +1016,1235 @@
                         <button onclick="addComment()" style="background: #405de6; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-size: 12px; cursor: pointer;">게시</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 왕비호 투표 모달 -->
+    <div id="bihoVoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">👑 왕비호 투표</div>
+                <button class="close-btn" onclick="closeBihoVoteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 20px; color: #8e8e8e; font-size: 14px;">
+                    이번달 가장 맘에 안 드는 친구를 선택하세요 😈<br>
+                    <span style="color: #e91e63; font-weight: bold;">한 달에 한 번만 투표 가능!</span>
+                </div>
+                <div id="bihoVoteList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 프로필 편집 모달 -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">프로필 편집</div>
+                <button class="close-btn" onclick="closeEditProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-form">
+                    <div class="form-group">
+                        <label class="form-label">이름</label>
+                        <input type="text" class="form-input" id="editName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">자기소개</label>
+                        <textarea class="form-textarea" id="editBio" placeholder="자신을 소개해보세요..."></textarea>
+                    </div>
+                    <button class="save-btn" onclick="saveProfile()">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVGZZ6JumYWpFF82d7RW-8DHmzqzNVGoo",
+            authDomain: "gazoku-91025.firebaseapp.com",
+            projectId: "gazoku-91025",
+            storageBucket: "gazoku-91025.firebasestorage.app",
+            messagingSenderId: "295977381584",
+            appId: "1:295977381584:web:f21ffb806ae7f82918b8d5"
+        };
+
+        // Firebase 초기화
+        let db = null;
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log('✅ Firebase 초기화 성공!');
+        } catch (error) {
+            console.error('❌ Firebase 초기화 실패:', error);
+            console.log('오프라인 모드로 실행합니다.');
+        }
+
+        // 친구 데이터
+        const friends = [
+            { name: "황승하", birthday: "2001-07-11" },
+            { name: "이서현", birthday: "2001-01-24" },
+            { name: "한희준", birthday: "2001-12-21" },
+            { name: "복지현", birthday: "2001-01-15" },
+            { name: "양정후", birthday: "2001-10-18" },
+            { name: "윤희태", birthday: "2001-10-15" },
+            { name: "곽도윤", birthday: "2001-07-31" },
+            { name: "강순건", birthday: "2001-04-18" },
+            { name: "양규현", birthday: "2001-04-19" },
+            { name: "이학준", birthday: "2002-02-22" },
+            { name: "강정현", birthday: "2001-08-07" },
+            { name: "박주호", birthday: "2001-06-01" },
+            { name: "전상혁", birthday: "2001-08-18" },
+            { name: "심재현", birthday: "2001-10-05" },
+            { name: "신민호", birthday: "2001-03-03" }
+        ];
+
+        // 전역 변수
+        let currentUser = null;
+        let selectedFriend = null;
+        let selectedPostType = 'diary';
+        let currentImageData = null;
+        let currentRankingTab = 'meeting';
+        let currentPostId = null;
+
+        // 로컬 캐시
+        let posts = [];
+        let profiles = {};
+        let bihoVotes = {};
+        let comments = {};
+
+        // Firebase 데이터 관리
+        class FirebaseManager {
+            static async addPost(post) {
+                if (!db) {
+                    posts.unshift(post);
+                    localStorage.setItem('posts', JSON.stringify(posts));
+                    return true;
+                }
+
+                try {
+                    await db.collection('posts').add(post);
+                    return true;
+                } catch (error) {
+                    console.error('포스트 저장 실패:', error);
+                    posts.unshift(post);
+                    localStorage.setItem('posts', JSON.stringify(posts));
+                    return true;
+                }
+            }
+
+            static async getPosts() {
+                if (!db) {
+                    posts = JSON.parse(localStorage.getItem('posts') || '[]');
+                    return posts;
+                }
+
+                try {
+                    const snapshot = await db.collection('posts').orderBy('date', 'desc').get();
+                    posts = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    return posts;
+                } catch (error) {
+                    console.error('포스트 로드 실패:', error);
+                    posts = JSON.parse(localStorage.getItem('posts') || '[]');
+                    return posts;
+                }
+            }
+
+            static async updatePost(postId, updates) {
+                if (!db) {
+                    const postIndex = posts.findIndex(p => p.id === postId);
+                    if (postIndex !== -1) {
+                        posts[postIndex] = { ...posts[postIndex], ...updates };
+                        localStorage.setItem('posts', JSON.stringify(posts));
+                    }
+                    return true;
+                }
+
+                try {
+                    await db.collection('posts').doc(postId).update(updates);
+                    return true;
+                } catch (error) {
+                    console.error('포스트 업데이트 실패:', error);
+                    const postIndex = posts.findIndex(p => p.id === postId);
+                    if (postIndex !== -1) {
+                        posts[postIndex] = { ...posts[postIndex], ...updates };
+                        localStorage.setItem('posts', JSON.stringify(posts));
+                    }
+                    return true;
+                }
+            }
+
+            static async deletePost(postId) {
+                if (!db) {
+                    posts = posts.filter(p => p.id !== postId);
+                    localStorage.setItem('posts', JSON.stringify(posts));
+                    return true;
+                }
+
+                try {
+                    await db.collection('posts').doc(postId).delete();
+                    return true;
+                } catch (error) {
+                    console.error('포스트 삭제 실패:', error);
+                    posts = posts.filter(p => p.id !== postId);
+                    localStorage.setItem('posts', JSON.stringify(posts));
+                    return true;
+                }
+            }
+
+            static async addComment(postId, comment) {
+                if (!db) {
+                    if (!comments[postId]) comments[postId] = [];
+                    comments[postId].push(comment);
+                    localStorage.setItem('comments', JSON.stringify(comments));
+                    return true;
+                }
+
+                try {
+                    await db.collection('comments').add({
+                        postId: postId,
+                        ...comment
+                    });
+                    return true;
+                } catch (error) {
+                    console.error('댓글 저장 실패:', error);
+                    if (!comments[postId]) comments[postId] = [];
+                    comments[postId].push(comment);
+                    localStorage.setItem('comments', JSON.stringify(comments));
+                    return true;
+                }
+            }
+
+            static async getComments() {
+                if (!db) {
+                    comments = JSON.parse(localStorage.getItem('comments') || '{}');
+                    return comments;
+                }
+
+                try {
+                    const snapshot = await db.collection('comments').get();
+                    const firestoreComments = {};
+                    snapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (!firestoreComments[data.postId]) {
+                            firestoreComments[data.postId] = [];
+                        }
+                        firestoreComments[data.postId].push({
+                            id: doc.id,
+                            author: data.author,
+                            text: data.text,
+                            date: data.date
+                        });
+                    });
+                    comments = firestoreComments;
+                    return firestoreComments;
+                } catch (error) {
+                    console.error('댓글 로드 실패:', error);
+                    comments = JSON.parse(localStorage.getItem('comments') || '{}');
+                    return comments;
+                }
+            }
+
+            static async updateBihoVotes(monthKey, voteData) {
+                if (!db) {
+                    bihoVotes[monthKey] = voteData;
+                    localStorage.setItem('bihoVotes', JSON.stringify(bihoVotes));
+                    return true;
+                }
+
+                try {
+                    await db.collection('bihoVotes').doc(monthKey).set(voteData);
+                    return true;
+                } catch (error) {
+                    console.error('왕비호 투표 저장 실패:', error);
+                    bihoVotes[monthKey] = voteData;
+                    localStorage.setItem('bihoVotes', JSON.stringify(bihoVotes));
+                    return true;
+                }
+            }
+
+            static async getBihoVotes() {
+                if (!db) {
+                    bihoVotes = JSON.parse(localStorage.getItem('bihoVotes') || '{}');
+                    return bihoVotes;
+                }
+
+                try {
+                    const snapshot = await db.collection('bihoVotes').get();
+                    const firestoreBihoVotes = {};
+                    snapshot.docs.forEach(doc => {
+                        firestoreBihoVotes[doc.id] = doc.data();
+                    });
+                    bihoVotes = firestoreBihoVotes;
+                    return firestoreBihoVotes;
+                } catch (error) {
+                    console.error('왕비호 투표 로드 실패:', error);
+                    bihoVotes = JSON.parse(localStorage.getItem('bihoVotes') || '{}');
+                    return bihoVotes;
+                }
+            }
+
+            static async updateProfile(userId, profileData) {
+                if (!db) {
+                    profiles[userId] = profileData;
+                    localStorage.setItem('profiles', JSON.stringify(profiles));
+                    return true;
+                }
+
+                try {
+                    await db.collection('profiles').doc(userId).set(profileData);
+                    return true;
+                } catch (error) {
+                    console.error('프로필 저장 실패:', error);
+                    profiles[userId] = profileData;
+                    localStorage.setItem('profiles', JSON.stringify(profiles));
+                    return true;
+                }
+            }
+
+            static async getProfiles() {
+                if (!db) {
+                    profiles = JSON.parse(localStorage.getItem('profiles') || '{}');
+                    return profiles;
+                }
+
+                try {
+                    const snapshot = await db.collection('profiles').get();
+                    const firestoreProfiles = {};
+                    snapshot.docs.forEach(doc => {
+                        firestoreProfiles[doc.id] = doc.data();
+                    });
+                    profiles = firestoreProfiles;
+                    return firestoreProfiles;
+                } catch (error) {
+                    console.error('프로필 로드 실패:', error);
+                    profiles = JSON.parse(localStorage.getItem('profiles') || '{}');
+                    return profiles;
+                }
+            }
+        }
+
+        // 실시간 업데이트 리스너
+        function setupRealtimeListeners() {
+            if (!db) return;
+
+            try {
+                db.collection('posts').onSnapshot((snapshot) => {
+                    posts = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })).sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    if (document.getElementById('postFeed')) {
+                        renderPostFeed();
+                        renderStories();
+                    }
+                });
+
+                db.collection('comments').onSnapshot((snapshot) => {
+                    const updatedComments = {};
+                    snapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        if (!updatedComments[data.postId]) {
+                            updatedComments[data.postId] = [];
+                        }
+                        updatedComments[data.postId].push({
+                            id: doc.id,
+                            author: data.author,
+                            text: data.text,
+                            date: data.date
+                        });
+                    });
+                    comments = updatedComments;
+                    
+                    if (currentPostId && document.getElementById('commentModal').classList.contains('active')) {
+                        renderComments(currentPostId);
+                    }
+                    if (document.getElementById('postFeed')) {
+                        renderPostFeed();
+                    }
+                });
+
+                db.collection('bihoVotes').onSnapshot((snapshot) => {
+                    const updatedBihoVotes = {};
+                    snapshot.docs.forEach(doc => {
+                        updatedBihoVotes[doc.id] = doc.data();
+                    });
+                    bihoVotes = updatedBihoVotes;
+                    
+                    if (currentRankingTab === 'biho' && document.getElementById('search').classList.contains('active')) {
+                        renderRanking();
+                    }
+                });
+            } catch (error) {
+                console.log('실시간 리스너 설정 실패:', error);
+            }
+        }
+
+        // 왕비호 투표 초기화
+        async function initializeBihoVotes() {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+            
+            if (!bihoVotes[currentMonth]) {
+                const initialVotes = {
+                    votes: {},
+                    voters: {}
+                };
+                
+                friends.forEach(friend => {
+                    initialVotes.votes[friend.name] = 0;
+                });
+                
+                await FirebaseManager.updateBihoVotes(currentMonth, initialVotes);
+            }
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            renderFriendGrid();
+            setupEventListeners();
+        });
+
+        function renderFriendGrid() {
+            const grid = document.getElementById('friendGrid');
+            grid.innerHTML = friends.map(friend => `
+                <div class="friend-card" data-name="${friend.name}" onclick="selectFriend('${friend.name}')">
+                    <div class="friend-name">${friend.name}</div>
+                    <div class="friend-birthday">${formatBirthday(friend.birthday)}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectFriend(name) {
+            document.querySelectorAll('.friend-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            const selectedCard = document.querySelector(`[data-name="${name}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('selected');
+                selectedFriend = name;
+                document.getElementById('loginBtn').disabled = false;
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginBtn').addEventListener('click', login);
+        }
+
+        async function login() {
+            if (!selectedFriend) return;
+            
+            currentUser = selectedFriend;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            
+            showLoadingMessage();
+            await initializeApp();
+        }
+
+        function showLoadingMessage() {
+            const content = document.querySelector('.content');
+            content.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; gap: 20px;">
+                    <div style="font-size: 24px;">🔥</div>
+                    <div style="font-size: 18px; font-weight: bold;">가조쿠 로딩중...</div>
+                    <div style="font-size: 14px; color: #8e8e8e;">친구들과 실시간 연결하는 중이에요!</div>
+                </div>
+            `;
+        }
+
+        async function initializeApp() {
+            try {
+                await Promise.all([
+                    FirebaseManager.getPosts(),
+                    FirebaseManager.getComments(),
+                    FirebaseManager.getBihoVotes(),
+                    FirebaseManager.getProfiles()
+                ]);
+
+                setupRealtimeListeners();
+                setupSelectOptions();
+                updateProfilePics();
+                renderBirthdayBanner();
+                renderStories();
+                renderPostFeed();
+                renderRanking();
+                renderProfile();
+                await initializeBihoVotes();
+
+                console.log('✅ 가조쿠 초기화 완료!');
+            } catch (error) {
+                console.error('초기화 오류:', error);
+            }
+        }
+
+        function setupSelectOptions() {
+            const meetingSelect = document.getElementById('meetingPartner');
+            const options = friends
+                .filter(f => f.name !== currentUser)
+                .map(f => `<option value="${f.name}">${f.name}</option>`)
+                .join('');
+            
+            meetingSelect.innerHTML = '<option value="">만난 친구 선택</option>' + options;
+        }
+
+        function updateProfilePics() {
+            const initials = currentUser.substring(0, 2);
+            document.getElementById('createProfilePic').textContent = initials;
+            document.getElementById('profilePicLarge').textContent = initials;
+            document.getElementById('profileName').textContent = currentUser;
+            document.getElementById('editName').value = currentUser;
+            
+            const commentProfilePic = document.getElementById('commentProfilePic');
+            if (commentProfilePic) {
+                commentProfilePic.textContent = initials;
+            }
+            
+            const userProfile = profiles[currentUser] || {};
+            document.getElementById('profileBio').textContent = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
+            document.getElementById('editBio').value = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
+        }
+
+        function renderBirthdayBanner() {
+            const nextBirthday = getNextBirthday();
+            document.getElementById('birthdayBanner').innerHTML = 
+                `🎂 ${nextBirthday.name}님의 생일까지 ${nextBirthday.daysUntil}일 남았어요!`;
+        }
+
+        function renderStories() {
+            const today = new Date().toDateString();
+            const todayPosts = posts.filter(post => 
+                new Date(post.date).toDateString() === today
+            );
+
+            const activeUsers = [...new Set(todayPosts.map(post => post.author))];
+            
+            const storiesHtml = activeUsers.map(user => {
+                const userPosts = todayPosts.filter(post => post.author === user);
+                const hasMeeting = userPosts.some(post => post.type === 'meeting');
+                const hasDiary = userPosts.some(post => post.type === 'diary');
+                
+                return `
+                    <div class="story-item" onclick="viewStory('${user}')">
+                        <div class="story-ring ${user === currentUser ? 'viewed' : ''}">
+                            <div class="story-pic">${user.substring(0, 2)}</div>
+                            ${hasMeeting ? '<div class="story-badge meeting">👥</div>' : ''}
+                            ${hasDiary && !hasMeeting ? '<div class="story-badge diary">📝</div>' : ''}
+                        </div>
+                        <div class="story-username">${user}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('storiesContainer').innerHTML = storiesHtml;
+        }
+
+        function viewStory(userName) {
+            const today = new Date().toDateString();
+            const userTodayPosts = posts.filter(post => 
+                post.author === userName && new Date(post.date).toDateString() === today
+            );
+
+            if (userTodayPosts.length === 0) return;
+
+            let storyContent = `<h3>${userName}님의 오늘</h3><br>`;
+            userTodayPosts.forEach(post => {
+                const type = post.type === 'meeting' ? '👥 만남' : '📝 일기';
+                storyContent += `<strong>${type}</strong><br>${post.content}<br><br>`;
+                if (post.partner) {
+                    storyContent += `<em>@${post.partner}님과 함께</em><br><br>`;
+                }
+            });
+
+            document.getElementById('likesModalBody').innerHTML = storyContent;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = '오늘의 스토리';
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'search') {
+                renderRanking();
+            } else if (tabName === 'profile') {
+                renderProfile();
+            } else if (tabName === 'home') {
+                renderStories();
+            }
+        }
+
+        function selectPostType(type) {
+            selectedPostType = type;
+            
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-type="${type}"]`).classList.add('active');
+
+            const meetingSelector = document.getElementById('meetingSelector');
+            if (type === 'meeting') {
+                meetingSelector.classList.add('active');
+                document.getElementById('postContent').placeholder = '오늘 누구와 만났나요? 어떤 시간을 보내셨나요?';
+            } else {
+                meetingSelector.classList.remove('active');
+                document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
+            }
+        }
+
+        function previewImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageData = e.target.result;
+                document.getElementById('imagePreview').innerHTML = `
+                    <div class="image-preview">
+                        <img src="${currentImageData}" class="preview-img" alt="미리보기">
+                        <button class="remove-img" onclick="removeImage()">&times;</button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            currentImageData = null;
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        async function createPost() {
+            const content = document.getElementById('postContent').value.trim();
+            
+            if (!content) {
+                alert('내용을 입력해주세요!');
+                return;
+            }
+
+            if (selectedPostType === 'meeting') {
+                const partner = document.getElementById('meetingPartner').value;
+                if (!partner) {
+                    alert('만난 친구를 선택해주세요!');
+                    return;
+                }
+            }
+
+            const post = {
+                id: Date.now().toString(),
+                author: currentUser,
+                content: content,
+                type: selectedPostType,
+                partner: selectedPostType === 'meeting' ? document.getElementById('meetingPartner').value : null,
+                image: currentImageData,
+                likes: [],
+                date: new Date().toISOString()
+            };
+
+            await FirebaseManager.addPost(post);
+
+            document.getElementById('postContent').value = '';
+            document.getElementById('meetingPartner').value = '';
+            removeImage();
+
+            console.log('✅ 새 게시물 작성완료!');
+        }
+
+        function renderPostFeed() {
+            const feed = document.getElementById('postFeed');
+            
+            feed.innerHTML = posts.map(post => `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-user">
+                            <div class="profile-pic">${post.author.substring(0, 2)}</div>
+                            <div class="user-info">
+                                <h4>${post.author}</h4>
+                                <div class="post-time">${formatTimeAgo(post.date)}</div>
+                            </div>
+                        </div>
+                        ${post.author === currentUser ? `
+                            <button class="delete-btn" onclick="deletePost('${post.id}')">삭제</button>
+                        ` : ''}
+                    </div>
+                    
+                    ${post.image ? `
+                        <img src="${post.image}" class="post-image" alt="게시물 이미지">
+                    ` : ''}
+                    
+                    <div class="post-actions">
+                        <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
+                                onclick="toggleLike('${post.id}')">
+                            ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
+                        </button>
+                        <button class="action-btn" onclick="openCommentModal('${post.id}')">💬</button>
+                        <button class="action-btn" onclick="sharePost('${post.id}')">📤</button>
+                    </div>
+                    
+                    ${post.likes.length > 0 ? `
+                        <div class="post-likes" onclick="showLikes('${post.id}')">
+                            좋아요 ${post.likes.length}개
+                        </div>
+                    ` : ''}
+                    
+                    ${comments[post.id] && comments[post.id].length > 0 ? `
+                        <div style="padding: 0 16px; margin-bottom: 8px;">
+                            <span style="color: #8e8e8e; font-size: 14px; cursor: pointer;" onclick="openCommentModal('${post.id}')">
+                                댓글 ${comments[post.id].length}개 모두 보기
+                            </span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="post-content">
+                        <span class="username">${post.author}</span>
+                        ${post.type === 'meeting' && post.partner ? 
+                            `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
+                        ${post.content}
+                        ${post.type === 'meeting' ? ' 👥' : ' 📝'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function toggleLike(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            const likeIndex = post.likes.indexOf(currentUser);
+            let updatedLikes;
+            
+            if (likeIndex > -1) {
+                updatedLikes = post.likes.filter(user => user !== currentUser);
+            } else {
+                updatedLikes = [...post.likes, currentUser];
+            }
+
+            await FirebaseManager.updatePost(postId, { likes: updatedLikes });
+        }
+
+        async function deletePost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            if (post.author !== currentUser) {
+                alert('자신의 게시물만 삭제할 수 있습니다!');
+                return;
+            }
+
+            if (confirm('정말 삭제하시겠습니까?')) {
+                await FirebaseManager.deletePost(postId);
+                console.log('✅ 게시물이 삭제되었습니다!');
+            }
+        }
+
+        function showLikes(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post || post.likes.length === 0) return;
+
+            const likesHtml = post.likes.map(user => `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
+                    <div class="profile-pic">${user.substring(0, 2)}</div>
+                    <div style="font-weight: 500;">${user}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('likesModalBody').innerHTML = likesHtml;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = '좋아요';
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function closeLikesModal() {
+            document.getElementById('likesModal').classList.remove('active');
+        }
+
+        function showRankingTab(tab) {
+            currentRankingTab = tab;
+            
+            document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="showRankingTab('${tab}')"]`).classList.add('active');
+            
+            renderRanking();
+        }
+
+        function renderRanking() {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            let content = '';
+
+            if (currentRankingTab === 'meeting') {
+                const monthlyMeetings = posts.filter(post => {
+                    const postDate = new Date(post.date);
+                    return post.type === 'meeting' && 
+                           postDate.getMonth() === currentMonth && 
+                           postDate.getFullYear() === currentYear;
+                });
+
+                const meetingCounts = {};
+                friends.forEach(friend => meetingCounts[friend.name] = 0);
+
+                monthlyMeetings.forEach(post => {
+                    meetingCounts[post.author]++;
+                    if (post.partner) {
+                        meetingCounts[post.partner]++;
+                    }
+                });
+
+                const meetingRanking = Object.entries(meetingCounts)
+                    .map(([name, count]) => ({ name, count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 10);
+
+                content = `
+                    <div class="ranking-card">
+                        <div class="ranking-title">👥 이번달 만남킹 랭킹</div>
+                        ${meetingRanking.map((item, index) => `
+                            <div class="ranking-item">
+                                <span class="rank-position">${index + 1}위</span>
+                                <span>${item.name}</span>
+                                <span>${item.count}번</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (currentRankingTab === 'popular') {
+                const monthlyPosts = posts.filter(post => {
+                    const postDate = new Date(post.date);
+                    return postDate.getMonth() === currentMonth && 
+                           postDate.getFullYear() === currentYear;
+                });
+
+                const popularPosts = monthlyPosts
+                    .sort((a, b) => b.likes.length - a.likes.length)
+                    .slice(0, 5);
+
+                content = `
+                    <div class="ranking-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="ranking-title">🔥 이번달 인기글 TOP 5</div>
+                        ${popularPosts.map((post, index) => `
+                            <div class="ranking-item" style="flex-direction: column; align-items: stretch; padding: 12px 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span class="rank-position">${index + 1}위</span>
+                                    <span>${post.author}</span>
+                                    <span>❤️ ${post.likes.length}</span>
+                                </div>
+                                <div style="font-size: 12px; opacity: 0.8; line-height: 1.3;">
+                                    ${post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (currentRankingTab === 'biho') {
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+                
+                if (!bihoVotes[currentMonth]) {
+                    initializeBihoVotes();
+                }
+                
+                const currentVotes = bihoVotes[currentMonth] || { votes: {}, voters: {} };
+                const bihoRanking = Object.entries(currentVotes.votes || {})
+                    .map(([name, votes]) => ({ name, votes }))
+                    .sort((a, b) => b.votes - a.votes);
+
+                const hasVoted = currentVotes.voters && currentVotes.voters[currentUser];
+
+                content = `
+                    <div class="ranking-card" style="background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);">
+                        <div class="ranking-title">👑 이번달 왕비호 랭킹</div>
+                        <div style="text-align: center; margin-bottom: 16px; font-size: 12px; opacity: 0.8;">
+                            ${now.getMonth() + 1}월 왕비호 투표 현황
+                        </div>
+                        ${bihoRanking.filter(item => item.votes > 0).length === 0 ? `
+                            <div style="text-align: center; padding: 20px; opacity: 0.7;">
+                                아직 투표가 없어요<br>첫 투표의 주인공이 되어보세요! 😈
+                            </div>
+                        ` : bihoRanking.filter(item => item.votes > 0).map((item, index) => `
+                            <div class="ranking-item">
+                                <div style="display: flex; align-items: center;">
+                                    <span class="rank-position">${index + 1}위</span>
+                                    ${index === 0 ? '<span class="biho-crown">👑</span>' : ''}
+                                    <span>${item.name}</span>
+                                </div>
+                                <span>${item.votes}표</span>
+                            </div>
+                        `).join('')}
+                        
+                        <div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            ${hasVoted ? 
+                                '<span style="font-size: 12px; opacity: 0.7;">이번달 투표 완료! 👍</span>' : 
+                                '<button class="vote-btn" onclick="openBihoVoteModal()">투표하러 가기</button>'
+                            }
+                        </div>
+                    </div>
+                `;
+            } else if (currentRankingTab === 'stats') {
+                const totalPosts = posts.length;
+                const totalMeetings = posts.filter(p => p.type === 'meeting').length;
+                const totalLikes = posts.reduce((sum, p) => sum + p.likes.length, 0);
+                const mostActiveUser = friends.reduce((max, friend) => {
+                    const friendPosts = posts.filter(p => p.author === friend.name).length;
+                    return friendPosts > max.count ? { name: friend.name, count: friendPosts } : max;
+                }, { name: '', count: 0 });
+
+                content = `
+                    <div class="ranking-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="ranking-title">📊 가조쿠 전체 통계</div>
+                        <div class="ranking-item">
+                            <span>총 게시물</span>
+                            <span>${totalPosts}개</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span>총 만남</span>
+                            <span>${totalMeetings}번</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span>총 좋아요</span>
+                            <span>${totalLikes}개</span>
+                        </div>
+                        <div class="ranking-item">
+                            <span>최고 활동러</span>
+                            <span>${mostActiveUser.name} (${mostActiveUser.count}개)</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('rankingContent').innerHTML = content;
+        }
+
+        function renderProfile() {
+            const userPosts = posts.filter(post => post.author === currentUser);
+            const userMeetings = posts.filter(post => 
+                post.type === 'meeting' && (post.author === currentUser || post.partner === currentUser)
+            );
+            const userLikes = posts.reduce((total, post) => {
+                return total + (post.author === currentUser ? post.likes.length : 0);
+            }, 0);
+
+            document.getElementById('postCount').textContent = userPosts.length;
+            document.getElementById('meetingCount').textContent = userMeetings.length;
+            document.getElementById('likeCount').textContent = userLikes;
+
+            document.getElementById('myPosts').innerHTML = `
+                <div style="padding: 16px;">
+                    <h3 style="margin-bottom: 16px; text-align: center;">내 게시물</h3>
+                    ${userPosts.length === 0 ? `
+                        <div style="text-align: center; color: #8e8e8e; margin: 40px 0;">
+                            아직 게시물이 없어요<br>
+                            첫 번째 게시물을 작성해보세요!
+                        </div>
+                    ` : userPosts.map(post => `
+                        <div class="post" style="margin-bottom: 16px;">
+                            <div class="post-header">
+                                <div class="post-user">
+                                    <div class="profile-pic">${post.author.substring(0, 2)}</div>
+                                    <div class="user-info">
+                                        <h4>${post.author}</h4>
+                                        <div class="post-time">${formatTimeAgo(post.date)}</div>
+                                    </div>
+                                </div>
+                                <button class="delete-btn" onclick="deletePost('${post.id}')">삭제</button>
+                            </div>
+                            
+                            ${post.image ? `
+                                <img src="${post.image}" class="post-image" alt="게시물 이미지">
+                            ` : ''}
+                            
+                            <div class="post-actions">
+                                <button class="action-btn ${post.likes.includes(currentUser) ? 'liked' : ''}" 
+                                        onclick="toggleLike('${post.id}')">
+                                    ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
+                                </button>
+                            </div>
+                            
+                            ${post.likes.length > 0 ? `
+                                <div class="post-likes" onclick="showLikes('${post.id}')">
+                                    좋아요 ${post.likes.length}개
+                                </div>
+                            ` : ''}
+                            
+                            <div class="post-content">
+                                <span class="username">${post.author}</span>
+                                ${post.type === 'meeting' && post.partner ? 
+                                    `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
+                                ${post.content}
+                                ${post.type === 'meeting' ? ' 👥' : ' 📝'}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 댓글 기능
+        function openCommentModal(postId) {
+            currentPostId = postId;
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+
+            renderComments(postId);
+            document.getElementById('commentModal').classList.add('active');
+            
+            document.getElementById('commentProfilePic').textContent = currentUser.substring(0, 2);
+        }
+
+        function closeCommentModal() {
+            document.getElementById('commentModal').classList.remove('active');
+            document.getElementById('commentInput').value = '';
+            currentPostId = null;
+        }
+
+        function renderComments(postId) {
+            const postComments = comments[postId] || [];
+            const commentsHtml = postComments.map(comment => `
+                <div class="comment-item">
+                    <div class="profile-pic">${comment.author.substring(0, 2)}</div>
+                    <div class="comment-content">
+                        <div class="comment-author">${comment.author}</div>
+                        <div class="comment-text">${comment.text}</div>
+                        <div class="comment-time">${formatTimeAgo(comment.date)}</div>
+                    </div>
+                    ${comment.author === currentUser ? `
+                        <button class="comment-delete" onclick="deleteComment('${postId}', '${comment.id}')">삭제</button>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            document.getElementById('commentsList').innerHTML = postComments.length === 0 ? 
+                '<div style="text-align: center; color: #8e8e8e; padding: 20px;">첫 번째 댓글을 남겨보세요!</div>' : 
+                commentsHtml;
+        }
+
+        async function addComment() {
+            if (!currentPostId) return;
+            
+            const commentText = document.getElementById('commentInput').value.trim();
+            if (!commentText) return;
+
+            const comment = {
+                id: Date.now().toString(),
+                author: currentUser,
+                text: commentText,
+                date: new Date().toISOString()
+            };
+
+            await FirebaseManager.addComment(currentPostId, comment);
+
+            document.getElementById('commentInput').value = '';
+            console.log('✅ 댓글이 작성되었습니다!');
+        }
+
+        async function deleteComment(postId, commentId) {
+            try {
+                if (db) {
+                    await db.collection('comments').doc(commentId).delete();
+                } else {
+                    if (comments[postId]) {
+                        comments[postId] = comments[postId].filter(c => c.id !== commentId);
+                        localStorage.setItem('comments', JSON.stringify(comments));
+                        renderComments(postId);
+                        renderPostFeed();
+                    }
+                }
+                console.log('✅ 댓글이 삭제되었습니다!');
+            } catch (error) {
+                console.error('댓글 삭제 실패:', error);
+            }
+        }
+
+        function handleCommentKeyPress(event) {
+            if (event.key === 'Enter') {
+                addComment();
+            }
+        }
+
+        function sharePost(postId) {
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            const shareText = `${post.author}님의 게시물을 확인해보세요!\n\n"${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}"`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '가조쿠 게시물',
+                    text: shareText
+                });
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('게시물 내용이 클립보드에 복사되었습니다!');
+                }).catch(() => {
+                    alert('공유하기: ' + shareText);
+                });
+            }
+        }
+
+        // 왕비호 투표 함수들
+        function openBihoVoteModal() {
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+            const currentVotes = bihoVotes[currentMonth] || { votes: {}, voters: {} };
+            
+            if (currentVotes.voters && currentVotes.voters[currentUser]) {
+                alert('이번달에 이미 투표하셨습니다! 다음달을 기다려주세요 😊');
+                return;
+            }
+
+            const votableFriends = friends.filter(f => f.name !== currentUser);
+            
+            const voteListHtml = votableFriends.map(friend => `
+                <div class="biho-vote-item">
+                    <div class="biho-vote-info">
+                        <div class="profile-pic">${friend.name.substring(0, 2)}</div>
+                        <div>
+                            <div style="font-weight: 600;">${friend.name}</div>
+                            <div style="font-size: 12px; color: #8e8e8e;">현재 ${currentVotes.votes[friend.name] || 0}표</div>
+                        </div>
+                    </div>
+                    <button class="vote-btn" onclick="voteBiho('${friend.name}')">투표</button>
+                </div>
+            `).join('');
+
+            document.getElementById('bihoVoteList').innerHTML = voteListHtml;
+            document.getElementById('bihoVoteModal').classList.add('active');
+        }
+
+        function closeBihoVoteModal() {
+            document.getElementById('bihoVoteModal').classList.remove('active');
+        }
+
+        async function voteBiho(targetName) {
+            if (confirm(`정말 ${targetName}님에게 투표하시겠습니까? 😈\n이번달에는 다시 투표할 수 없어요!`)) {
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+                
+                if (!bihoVotes[currentMonth]) {
+                    await initializeBihoVotes();
+                }
+                
+                const currentVotes = { ...bihoVotes[currentMonth] };
+                currentVotes.votes[targetName]++;
+                currentVotes.voters[currentUser] = true;
+                
+                await FirebaseManager.updateBihoVotes(currentMonth, currentVotes);
+                
+                closeBihoVoteModal();
+                
+                alert(`${targetName}님에게 투표 완료! 👑\n결과는 랭킹에서 확인하세요!`);
+                console.log('✅ 왕비호 투표가 완료되었습니다!');
+            }
+        }
+
+        function showProfile() {
+            switchTab('profile');
+        }
+
+        function openEditProfileModal() {
+            document.getElementById('editProfileModal').classList.add('active');
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').classList.remove('active');
+        }
+
+        async function saveProfile() {
+            const bio = document.getElementById('editBio').value.trim();
+            
+            const profileData = {
+                bio: bio || '안녕하세요! 가조쿠의 일원입니다 ✨'
+            };
+            
+            await FirebaseManager.updateProfile(currentUser, profileData);
+            
+            document.getElementById('profileBio').textContent = profileData.bio;
+            closeEditProfileModal();
+            
+            console.log('✅ 프로필이 업데이트되었습니다!');
+        }
+
+        // 유틸리티 함수들
+        function formatBirthday(birthday) {
+            const date = new Date(birthday);
+            return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+        }
+
+        function getDaysUntilBirthday(birthday) {
+            const today = new Date();
+            const birthDate = new Date(birthday);
+            birthDate.setFullYear(today.getFullYear());
+            
+            if (birthDate < today) {
+                birthDate.setFullYear(today.getFullYear() + 1);
+            }
+            
+            const diffTime = birthDate - today;
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function getNextBirthday() {
+            return friends
+                .map(friend => ({
+                    ...friend,
+                    daysUntil: getDaysUntilBirthday(friend.birthday)
+                }))
+                .sort((a, b) => a.daysUntil - b.daysUntil)[0];
+        }
+
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = now - date;
+            const diffMinutes = Math.floor(diffTime / (1000 * 60));
+            const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffMinutes < 1) {
+                return '방금 전';
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes}분 전`;
+            } else if (diffHours < 24) {
+                return `${diffHours}시간 전`;
+            } else if (diffDays === 1) {
+                return '어제';
+            } else if (diffDays < 7) {
+                return `${diffDays}일 전`;
+            } else {
+                return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+            }
+        }
+
+        // 모달 외부 클릭시 닫기
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+
+        // 키보드 ESC로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
