@@ -1039,6 +1039,7 @@
         <!-- 하단 네비게이션 -->
         <div class="bottom-nav">
             <div class="nav-item active" data-tab="home" onclick="switchTab('home')">🏠</div>
+            <div class="nav-item" data-tab="create" onclick="switchTab('create')">✏️</div>
             <div class="nav-item" data-tab="search" onclick="switchTab('search')">🔍</div>
             <div class="nav-item" data-tab="profile" onclick="switchTab('profile')">👤</div>
         </div>
@@ -1762,19 +1763,7 @@
 
         function setupSelectOptions() {
             // 만남 선택용 체크박스 생성
-            const friendCheckboxes = document.getElementById('friendCheckboxes');
-            if (friendCheckboxes) {
-                const checkboxHtml = friends
-                    .filter(f => f.name !== currentUser)
-                    .map(f => `
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #dbdbdb; border-radius: 6px; cursor: pointer; font-size: 12px;">
-                            <input type="checkbox" value="${f.name}" onchange="updateSelectedFriends()" style="margin: 0;">
-                            <span>${f.name}</span>
-                        </label>
-                    `).join('');
-                
-                friendCheckboxes.innerHTML = checkboxHtml;
-            }
+            setupMeetingFriendCheckboxes();
         }
 
         function updateSelectedFriends() {
@@ -1888,10 +1877,32 @@
             if (type === 'meeting') {
                 meetingSelector.classList.add('active');
                 document.getElementById('postContent').placeholder = '오늘 누구와 만났나요? 어떤 시간을 보내셨나요?';
+                
+                // 친구 체크박스 다시 생성 (혹시 누락되었을 경우)
+                setupMeetingFriendCheckboxes();
             } else {
                 meetingSelector.classList.remove('active');
                 document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
             }
+        }
+
+        function setupMeetingFriendCheckboxes() {
+            const friendCheckboxes = document.getElementById('friendCheckboxes');
+            if (!friendCheckboxes) return;
+            
+            console.log('친구 체크박스 생성:', friends.length, '명');
+            
+            const checkboxHtml = friends
+                .filter(f => f.name !== currentUser)
+                .map(f => `
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #dbdbdb; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                        <input type="checkbox" value="${f.name}" onchange="updateSelectedFriends()" style="margin: 0;">
+                        <span>${f.name}</span>
+                    </label>
+                `).join('');
+            
+            friendCheckboxes.innerHTML = checkboxHtml;
+            console.log('친구 체크박스 생성 완료');
         }
 
         function previewImage(input) {
@@ -1959,11 +1970,24 @@
             renderPostFeed();
             console.log('로컬 UI 업데이트 완료');
 
-            // 폼 초기화
+            // 폼 완전 초기화
             document.getElementById('postContent').value = '';
             document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
             updateSelectedFriends();
-            removeImage();
+            
+            // 이미지 완전 제거
+            currentImageData = null;
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('imageInput').value = '';
+            
+            // 포스트 타입 초기화
+            selectedPostType = 'diary';
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('[data-type="diary"]').classList.add('active');
+            document.getElementById('meetingSelector').classList.remove('active');
+            document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
+            
+            console.log('✅ 폼 초기화 완료');
 
             try {
                 // Firebase에 저장
