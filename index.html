@@ -1414,7 +1414,6 @@
             grid.innerHTML = friends.map(friend => `
                 <div class="friend-card" data-name="${friend.name}" onclick="selectFriend('${friend.name}')">
                     <div class="friend-name">${friend.name}</div>
-                    <div class="friend-birthday">${formatBirthday(friend.birthday)}</div>
                 </div>
             `).join('');
         }
