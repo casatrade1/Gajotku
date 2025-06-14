@@ -1856,13 +1856,45 @@
             });
             document.getElementById(tabName).classList.add('active');
 
+            // 탭별 특별 처리
             if (tabName === 'search') {
                 renderRanking();
             } else if (tabName === 'profile') {
                 renderProfile();
             } else if (tabName === 'home') {
                 renderStories();
+            } else if (tabName === 'create') {
+                // 글쓰기 탭 진입시 초기화
+                console.log('글쓰기 탭 진입 - 초기화 시작');
+                setupCreateTab();
             }
+        }
+
+        function setupCreateTab() {
+            // 프로필 사진 설정
+            const createProfilePic2 = document.getElementById('createProfilePic2');
+            if (createProfilePic2 && currentUser) {
+                createProfilePic2.textContent = currentUser.substring(0, 2);
+            }
+            
+            // 친구 체크박스 생성
+            setupMeetingFriendCheckboxes2();
+            
+            // 포스트 타입 초기화
+            selectedPostType2 = 'diary';
+            document.querySelectorAll('#create .type-btn').forEach(btn => btn.classList.remove('active'));
+            const diaryBtn = document.querySelector('#create [data-type="diary"]');
+            if (diaryBtn) {
+                diaryBtn.classList.add('active');
+            }
+            
+            // 만남 선택기 숨기기
+            const meetingSelector2 = document.getElementById('meetingSelector2');
+            if (meetingSelector2) {
+                meetingSelector2.classList.remove('active');
+            }
+            
+            console.log('글쓰기 탭 초기화 완료');
         }
 
         function selectPostType(type) {
@@ -1928,79 +1960,7 @@
             document.getElementById('imageInput').value = '';
         }
 
-        async function createPost() {
-            console.log('게시물 작성 시작');
-            const content = document.getElementById('postContent').value.trim();
-            
-            if (!content) {
-                alert('내용을 입력해주세요!');
-                return;
-            }
-
-            if (selectedPostType === 'meeting') {
-                const checkboxes = document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked');
-                const selectedFriends = Array.from(checkboxes).map(cb => cb.value);
-                
-                if (selectedFriends.length === 0) {
-                    alert('만난 친구를 최소 1명 이상 선택해주세요!');
-                    return;
-                }
-            }
-
-            // 고유 ID 생성 (더 안전한 방법)
-            const postId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
-
-            const post = {
-                id: postId,
-                author: currentUser,
-                content: content,
-                type: selectedPostType,
-                partners: selectedPostType === 'meeting' ? 
-                    Array.from(document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value) : 
-                    null,
-                image: currentImageData,
-                likes: [],
-                date: new Date().toISOString()
-            };
-
-            console.log('생성된 게시물:', post);
-
-            // 즉시 로컬에 추가 (낙관적 업데이트)
-            posts.unshift(post);
-            renderPostFeed();
-            console.log('로컬 UI 업데이트 완료');
-
-            // 폼 완전 초기화
-            document.getElementById('postContent').value = '';
-            document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-            updateSelectedFriends();
-            
-            // 이미지 완전 제거
-            currentImageData = null;
-            document.getElementById('imagePreview').innerHTML = '';
-            document.getElementById('imageInput').value = '';
-            
-            // 포스트 타입 초기화
-            selectedPostType = 'diary';
-            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector('[data-type="diary"]').classList.add('active');
-            document.getElementById('meetingSelector').classList.remove('active');
-            document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
-            
-            console.log('✅ 폼 초기화 완료');
-
-            try {
-                // Firebase에 저장
-                console.log('Firebase에 저장 시작');
-                await FirebaseManager.addPost(post);
-                console.log('✅ Firebase 저장 완료');
-                
-            } catch (error) {
-                console.error('Firebase 저장 실패:', error);
-                // 실패해도 로컬에는 이미 저장되어 있음
-                alert('게시물 저장에 실패했지만 로컬에는 저장되었습니다.');
-            }
-        }
+        // createPost 함수는 제거됨 - 이제 createPostFromTab만 사용
 
         function renderPostFeed() {
             const feed = document.getElementById('postFeed');
