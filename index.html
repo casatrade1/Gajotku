@@ -878,9 +878,6 @@
 
     <!-- 메인 앱 화면 -->
     <div id="mainApp" class="main-app">
-        <!-- 생일 알림 띠 -->
-        <div id="birthdayBanner" class="birthday-banner"></div>
-
         <!-- 헤더 -->
         <div class="header">
             <div class="header-title">가조쿠</div>
@@ -1431,16 +1428,94 @@
             if (selectedCard) {
                 selectedCard.classList.add('selected');
                 selectedFriend = name;
-                document.getElementById('loginBtn').disabled = false;
+                
+                // 비밀번호 입력 필드 표시
+                showPasswordInput();
             }
         }
 
-        function setupEventListeners() {
-            document.getElementById('loginBtn').addEventListener('click', login);
+        function showPasswordInput() {
+            const loginBox = document.querySelector('.login-box');
+            
+            // 기존 비밀번호 입력 필드가 있으면 제거
+            const existingPasswordDiv = document.getElementById('passwordSection');
+            if (existingPasswordDiv) {
+                existingPasswordDiv.remove();
+            }
+            
+            // 비밀번호 입력 섹션 추가
+            const passwordSection = document.createElement('div');
+            passwordSection.id = 'passwordSection';
+            passwordSection.innerHTML = `
+                <div style="margin: 20px 0;">
+                    <input type="password" id="passwordInput" placeholder="${selectedFriend}님의 비밀번호를 입력하세요" 
+                           style="width: 100%; padding: 12px; border: 1px solid #dbdbdb; border-radius: 8px; font-size: 14px; margin-bottom: 10px;"
+                           onkeypress="handlePasswordKeyPress(event)">
+                    <div style="font-size: 12px; color: #8e8e8e; text-align: left;">
+                        💡 힌트: 본인만 아는 간단한 비밀번호를 설정하세요
+                    </div>
+                </div>
+            `;
+            
+            // 로그인 버튼 위에 삽입
+            const loginBtn = document.getElementById('loginBtn');
+            loginBox.insertBefore(passwordSection, loginBtn);
+            
+            // 비밀번호 입력 필드에 포커스
+            document.getElementById('passwordInput').focus();
+            
+            // 로그인 버튼 활성화
+            document.getElementById('loginBtn').disabled = false;
+        }
+
+        function handlePasswordKeyPress(event) {
+            if (event.key === 'Enter') {
+                login();
+            }
         }
 
         async function login() {
-            if (!selectedFriend) return;
+            if (!selectedFriend) {
+                alert('친구를 선택해주세요!');
+                return;
+            }
+            
+            const passwordInput = document.getElementById('passwordInput');
+            const password = passwordInput ? passwordInput.value.trim() : '';
+            
+            if (!password) {
+                alert('비밀번호를 입력해주세요!');
+                return;
+            }
+            
+            // 간단한 비밀번호 검증 (최소 3자리)
+            if (password.length < 3) {
+                alert('비밀번호는 최소 3자리 이상 입력해주세요!');
+                return;
+            }
+            
+            // 사용자별 비밀번호 저장/확인
+            const savedPasswords = JSON.parse(localStorage.getItem('userPasswords') || '{}');
+            
+            if (savedPasswords[selectedFriend]) {
+                // 기존 사용자 - 비밀번호 확인
+                if (savedPasswords[selectedFriend] !== password) {
+                    alert('비밀번호가 틀렸습니다!');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    return;
+                }
+            } else {
+                // 신규 사용자 - 비밀번호 설정
+                if (confirm(`${selectedFriend}님의 비밀번호를 "${password}"로 설정하시겠습니까?\n다음 접속시부터 이 비밀번호를 사용해야 합니다.`)) {
+                    savedPasswords[selectedFriend] = password;
+                    localStorage.setItem('userPasswords', JSON.stringify(savedPasswords));
+                } else {
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    return;
+                }
+            }
             
             currentUser = selectedFriend;
             document.getElementById('loginScreen').style.display = 'none';
@@ -1471,9 +1546,99 @@
                 ]);
 
                 setupRealtimeListeners();
+                
+                // 로딩 완료 후 정상 화면 복원
+                document.querySelector('.content').innerHTML = `
+                    <!-- 홈 피드 -->
+                    <div id="home" class="tab-content active">
+                        <!-- 스토리 영역 -->
+                        <div class="stories-container">
+                            <div class="stories-scroll" id="storiesContainer">
+                                <!-- 스토리가 여기에 생성됩니다 -->
+                            </div>
+                        </div>
+
+                        <!-- 포스트 작성 -->
+                        <div class="create-post">
+                            <div class="create-header">
+                                <div class="profile-pic" id="createProfilePic"></div>
+                                <div style="flex: 1;">
+                                    <div class="post-type">
+                                        <button class="type-btn active" data-type="diary" onclick="selectPostType('diary')">📝 일기</button>
+                                        <button class="type-btn" data-type="meeting" onclick="selectPostType('meeting')">👥 만남</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <textarea class="create-input" id="postContent" placeholder="오늘 어떤 하루를 보내셨나요?"></textarea>
+                            
+                            <div class="meeting-selector" id="meetingSelector">
+                                <select id="meetingPartner">
+                                    <option value="">만난 친구 선택</option>
+                                </select>
+                            </div>
+                            
+                            <div id="imagePreview"></div>
+                            
+                            <div class="create-actions">
+                                <button class="attach-btn" onclick="document.getElementById('imageInput').click()">
+                                    📷 사진 첨부
+                                </button>
+                                <button class="post-btn" onclick="createPost()">게시</button>
+                            </div>
+                            
+                            <input type="file" id="imageInput" class="hidden-file-input" accept="image/*" onchange="previewImage(this)">
+                        </div>
+
+                        <!-- 포스트 피드 -->
+                        <div id="postFeed"></div>
+                    </div>
+
+                    <!-- 검색/랭킹 탭 -->
+                    <div id="search" class="tab-content">
+                        <div class="search-container">
+                            <div class="search-tabs">
+                                <button class="search-tab active" onclick="showRankingTab('meeting')">만남킹</button>
+                                <button class="search-tab" onclick="showRankingTab('popular')">인기글</button>
+                                <button class="search-tab" onclick="showRankingTab('biho')">왕비호</button>
+                                <button class="search-tab" onclick="showRankingTab('stats')">통계</button>
+                            </div>
+                            <div id="rankingContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- 프로필 탭 -->
+                    <div id="profile" class="tab-content">
+                        <div class="profile-header">
+                            <div class="profile-top">
+                                <div class="profile-pic-large" id="profilePicLarge"></div>
+                                <div class="profile-info">
+                                    <div class="profile-name" id="profileName"></div>
+                                    <div class="profile-bio" id="profileBio">안녕하세요! 가조쿠의 일원입니다 ✨</div>
+                                    <button class="edit-profile-btn" onclick="openEditProfileModal()">프로필 편집</button>
+                                </div>
+                            </div>
+                            <div class="profile-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number" id="postCount">0</span>
+                                    <span class="stat-label">게시물</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="meetingCount">0</span>
+                                    <span class="stat-label">만남</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="likeCount">0</span>
+                                    <span class="stat-label">좋아요</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="myPosts"></div>
+                    </div>
+                `;
+                
                 setupSelectOptions();
                 updateProfilePics();
-                renderBirthdayBanner();
                 renderStories();
                 renderPostFeed();
                 renderRanking();
@@ -1483,6 +1648,14 @@
                 console.log('✅ 가조쿠 초기화 완료!');
             } catch (error) {
                 console.error('초기화 오류:', error);
+                // 오류 발생시에도 기본 화면 표시
+                document.querySelector('.content').innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <h3>오프라인 모드로 실행됩니다</h3>
+                        <p>Firebase 연결에 실패했지만 기본 기능을 사용할 수 있습니다.</p>
+                        <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #405de6; color: white; border: none; border-radius: 4px;">다시 시도</button>
+                    </div>
+                `;
             }
         }
 
@@ -1511,12 +1684,6 @@
             const userProfile = profiles[currentUser] || {};
             document.getElementById('profileBio').textContent = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
             document.getElementById('editBio').value = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
-        }
-
-        function renderBirthdayBanner() {
-            const nextBirthday = getNextBirthday();
-            document.getElementById('birthdayBanner').innerHTML = 
-                `🎂 ${nextBirthday.name}님의 생일까지 ${nextBirthday.daysUntil}일 남았어요!`;
         }
 
         function renderStories() {
