@@ -994,6 +994,10 @@
                     <textarea class="create-input" id="postContent" placeholder="오늘 어떤 하루를 보내셨나요?"></textarea>
                     
                     <div class="meeting-selector" id="meetingSelector">
+                        <div style="margin-bottom: 12px;">
+                            <label style="display: block; margin-bottom: 8px; font-size: 12px; color: #8e8e8e;">만난 날짜</label>
+                            <input type="date" id="meetingDate" style="width: 100%; padding: 8px; border: 1px solid #dbdbdb; border-radius: 6px; font-size: 14px;">
+                        </div>
                         <div style="margin-bottom: 8px; font-size: 12px; color: #8e8e8e;">만난 친구들을 선택하세요 (여러명 가능)</div>
                         <div id="friendCheckboxes" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 120px; overflow-y: auto;">
                             <!-- 친구 체크박스들이 여기에 생성됩니다 -->
@@ -1113,6 +1117,17 @@
             <div class="modal-body">
                 <div class="edit-form">
                     <div class="form-group">
+                        <label class="form-label">프로필 사진</label>
+                        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                            <div class="profile-pic-large" id="editProfilePic" style="width: 60px; height: 60px; font-size: 18px; cursor: pointer;" onclick="document.getElementById('profileImageInput').click()"></div>
+                            <div>
+                                <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background: #405de6; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 12px; cursor: pointer;">사진 변경</button>
+                                <br><small style="color: #8e8e8e; margin-top: 4px;">클릭하여 프로필 사진을 변경하세요</small>
+                            </div>
+                        </div>
+                        <input type="file" id="profileImageInput" class="hidden-file-input" accept="image/*" onchange="previewProfileImage(this)">
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">이름</label>
                         <input type="text" class="form-input" id="editName" readonly>
                     </div>
@@ -1125,6 +1140,12 @@
             </div>
         </div>
     </div>
+
+    <!-- 사진첩용 숨김 파일 입력 -->
+    <input type="file" id="galleryImageInput" class="hidden-file-input" accept="image/*" onchange="previewGalleryImage(this)">
+    
+    <!-- 스토리용 숨김 파일 입력 -->
+    <input type="file" id="storyImageInput" class="hidden-file-input" accept="image/*" onchange="previewStoryImage(this)">
 
     <script>
         // Firebase 설정
@@ -1168,7 +1189,23 @@
             { name: "신민호", birthday: "2001-03-03" }
         ];
 
-        // 전역 변수
+        let currentProfileImageData = null;
+
+        function previewProfileImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentProfileImageData = e.target.result;
+                const editProfilePic = document.getElementById('editProfilePic');
+                editProfilePic.style.backgroundImage = `url(${currentProfileImageData})`;
+                editProfilePic.style.backgroundSize = 'cover';
+                editProfilePic.style.backgroundPosition = 'center';
+                editProfilePic.textContent = '';
+            };
+            reader.readAsDataURL(file);
+        }
         let currentUser = null;
         let selectedFriend = null;
         let selectedPostType = 'diary';
@@ -1181,6 +1218,8 @@
         let profiles = {};
         let bihoVotes = {};
         let comments = {};
+        let galleryPhotos = []; // 사진첩 전용 사진들
+        let stories = []; // 스토리 전용 (24시간)
 
         // Firebase 데이터 관리
         class FirebaseManager {
@@ -1406,6 +1445,161 @@
                     return profiles;
                 }
             }
+
+            static async addGalleryPhoto(photo) {
+                if (!db) {
+                    galleryPhotos.unshift(photo);
+                    localStorage.setItem('galleryPhotos', JSON.stringify(galleryPhotos));
+                    return true;
+                }
+
+                try {
+                    const { id, ...photoData } = photo;
+                    const docRef = await db.collection('galleryPhotos').add(photoData);
+                    
+                    const localPhotoIndex = galleryPhotos.findIndex(p => p.id === photo.id);
+                    if (localPhotoIndex !== -1) {
+                        galleryPhotos[localPhotoIndex].id = docRef.id;
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('사진첩 사진 저장 실패:', error);
+                    localStorage.setItem('galleryPhotos', JSON.stringify(galleryPhotos));
+                    return true;
+                }
+            }
+
+            static async getGalleryPhotos() {
+                if (!db) {
+                    galleryPhotos = JSON.parse(localStorage.getItem('galleryPhotos') || '[]');
+                    return galleryPhotos;
+                }
+
+                try {
+                    const snapshot = await db.collection('galleryPhotos').orderBy('date', 'desc').get();
+                    galleryPhotos = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    return galleryPhotos;
+                } catch (error) {
+                    console.error('사진첩 사진 로드 실패:', error);
+                    galleryPhotos = JSON.parse(localStorage.getItem('galleryPhotos') || '[]');
+                    return galleryPhotos;
+                }
+            }
+
+            static async deleteGalleryPhoto(photoId) {
+                if (!db) {
+                    galleryPhotos = galleryPhotos.filter(p => p.id !== photoId);
+                    localStorage.setItem('galleryPhotos', JSON.stringify(galleryPhotos));
+                    return true;
+                }
+
+                try {
+                    await db.collection('galleryPhotos').doc(photoId).delete();
+                    return true;
+                } catch (error) {
+                    console.error('사진첨 사진 삭제 실패:', error);
+                    galleryPhotos = galleryPhotos.filter(p => p.id !== photoId);
+                    localStorage.setItem('galleryPhotos', JSON.stringify(galleryPhotos));
+                    return true;
+                }
+            }
+
+            static async addStory(story) {
+                if (!db) {
+                    stories.unshift(story);
+                    localStorage.setItem('stories', JSON.stringify(stories));
+                    return true;
+                }
+
+                try {
+                    const { id, ...storyData } = story;
+                    const docRef = await db.collection('stories').add(storyData);
+                    
+                    const localStoryIndex = stories.findIndex(s => s.id === story.id);
+                    if (localStoryIndex !== -1) {
+                        stories[localStoryIndex].id = docRef.id;
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('스토리 저장 실패:', error);
+                    localStorage.setItem('stories', JSON.stringify(stories));
+                    return true;
+                }
+            }
+
+            static async getStories() {
+                if (!db) {
+                    stories = JSON.parse(localStorage.getItem('stories') || '[]');
+                    // 24시간 지난 스토리 제거
+                    stories = stories.filter(story => {
+                        const storyDate = new Date(story.date);
+                        const now = new Date();
+                        const hoursDiff = (now - storyDate) / (1000 * 60 * 60);
+                        return hoursDiff < 24;
+                    });
+                    localStorage.setItem('stories', JSON.stringify(stories));
+                    return stories;
+                }
+
+                try {
+                    const snapshot = await db.collection('stories').orderBy('date', 'desc').get();
+                    const allStories = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    
+                    // 24시간 지난 스토리 필터링 및 삭제
+                    const validStories = [];
+                    const expiredStories = [];
+                    
+                    allStories.forEach(story => {
+                        const storyDate = new Date(story.date);
+                        const now = new Date();
+                        const hoursDiff = (now - storyDate) / (1000 * 60 * 60);
+                        
+                        if (hoursDiff < 24) {
+                            validStories.push(story);
+                        } else {
+                            expiredStories.push(story.id);
+                        }
+                    });
+                    
+                    // 만료된 스토리 삭제
+                    expiredStories.forEach(async (storyId) => {
+                        await db.collection('stories').doc(storyId).delete();
+                    });
+                    
+                    stories = validStories;
+                    return validStories;
+                } catch (error) {
+                    console.error('스토리 로드 실패:', error);
+                    stories = JSON.parse(localStorage.getItem('stories') || '[]');
+                    return stories;
+                }
+            }
+
+            static async deleteStory(storyId) {
+                if (!db) {
+                    stories = stories.filter(s => s.id !== storyId);
+                    localStorage.setItem('stories', JSON.stringify(stories));
+                    return true;
+                }
+
+                try {
+                    await db.collection('stories').doc(storyId).delete();
+                    return true;
+                } catch (error) {
+                    console.error('스토리 삭제 실패:', error);
+                    stories = stories.filter(s => s.id !== storyId);
+                    localStorage.setItem('stories', JSON.stringify(stories));
+                    return true;
+                }
+            }
         }
 
         // 실시간 업데이트 리스너
@@ -1488,6 +1682,53 @@
                         renderRanking();
                     }
                 });
+
+                db.collection('galleryPhotos').onSnapshot((snapshot) => {
+                    const updatedGalleryPhotos = [];
+                    snapshot.docs.forEach(doc => {
+                        updatedGalleryPhotos.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    updatedGalleryPhotos.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    const galleryChanged = JSON.stringify(galleryPhotos) !== JSON.stringify(updatedGalleryPhotos);
+                    if (galleryChanged) {
+                        galleryPhotos = updatedGalleryPhotos;
+                        
+                        if (currentRankingTab === 'gallery' && document.getElementById('search').classList.contains('active')) {
+                            renderRanking();
+                        }
+                    }
+                });
+
+                db.collection('stories').onSnapshot((snapshot) => {
+                    const updatedStories = [];
+                    snapshot.docs.forEach(doc => {
+                        const data = doc.data();
+                        const storyDate = new Date(data.date);
+                        const now = new Date();
+                        const hoursDiff = (now - storyDate) / (1000 * 60 * 60);
+                        
+                        // 24시간 이내 스토리만 포함
+                        if (hoursDiff < 24) {
+                            updatedStories.push({
+                                id: doc.id,
+                                ...data
+                            });
+                        }
+                    });
+                    
+                    updatedStories.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    const storiesChanged = JSON.stringify(stories) !== JSON.stringify(updatedStories);
+                    if (storiesChanged) {
+                        stories = updatedStories;
+                        renderStories();
+                    }
+                });
                 
                 console.log('실시간 리스너 설정 완료');
             } catch (error) {
@@ -1499,6 +1740,15 @@
             const today = new Date();
             const todayMonth = today.getMonth() + 1;
             const todayDate = today.getDate();
+            
+            // 왕비호 1순위 확인
+            const now = new Date();
+            const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
+            const currentVotes = bihoVotes[currentMonth] || { votes: {}, voters: {} };
+            const bihoRanking = Object.entries(currentVotes.votes || {})
+                .map(([name, votes]) => ({ name, votes }))
+                .sort((a, b) => b.votes - a.votes);
+            const bihoKing = bihoRanking.length > 0 && bihoRanking[0].votes > 0 ? bihoRanking[0] : null;
             
             // 오늘이 생일인 친구 찾기
             const birthdayFriends = friends.filter(friend => {
@@ -1512,7 +1762,8 @@
             if (birthdayFriends.length > 0) {
                 // 오늘이 생일인 경우
                 const names = birthdayFriends.map(f => f.name).join(', ');
-                message.textContent = `🎉 오늘은 ${names}님의 생일입니다! 생일 축하해요! 🎂`;
+                const bihoText = bihoKing ? ` | 👑 왕비호: ${bihoKing.name} (${bihoKing.votes}표)` : '';
+                message.textContent = `🎉 ${names}님 생일!${bihoText}`;
                 banner.style.display = 'block';
                 banner.style.background = '#e91e63';
             } else {
@@ -1525,11 +1776,13 @@
                     .sort((a, b) => a.daysUntil - b.daysUntil);
                 
                 const nextBirthday = upcomingBirthdays[0];
+                const bihoText = bihoKing ? ` | 👑 왕비호: ${bihoKing.name} (${bihoKing.votes}표)` : '';
+                
                 if (nextBirthday.daysUntil === 0) {
-                    message.textContent = `🎂 ${nextBirthday.name}님 생일 D-DAY!`;
+                    message.textContent = `🎂 ${nextBirthday.name}님 생일 D-DAY!${bihoText}`;
                     banner.style.background = '#e91e63';
                 } else {
-                    message.textContent = `🗓️ 다음 생일: ${nextBirthday.name}님 (D-${nextBirthday.daysUntil})`;
+                    message.textContent = `🗓️ 다음 생일: ${nextBirthday.name} (D-${nextBirthday.daysUntil})${bihoText}`;
                     banner.style.background = '#262626';
                 }
                 banner.style.display = 'block';
@@ -1724,7 +1977,9 @@
                     FirebaseManager.getPosts(),
                     FirebaseManager.getComments(),
                     FirebaseManager.getBihoVotes(),
-                    FirebaseManager.getProfiles()
+                    FirebaseManager.getProfiles(),
+                    FirebaseManager.getGalleryPhotos(),
+                    FirebaseManager.getStories()
                 ]);
 
                 setupRealtimeListeners();
@@ -1751,6 +2006,7 @@
                                 <button class="search-tab active" onclick="showRankingTab('meeting')">만남킹</button>
                                 <button class="search-tab" onclick="showRankingTab('popular')">인기글</button>
                                 <button class="search-tab" onclick="showRankingTab('biho')">왕비호</button>
+                                <button class="search-tab" onclick="showRankingTab('gallery')">사진첩</button>
                                 <button class="search-tab" onclick="showRankingTab('stats')">통계</button>
                             </div>
                             <div id="rankingContent"></div>
@@ -1774,6 +2030,10 @@
                             <textarea class="create-input" id="postContent" placeholder="오늘 어떤 하루를 보내셨나요?"></textarea>
                             
                             <div class="meeting-selector" id="meetingSelector">
+                                <div style="margin-bottom: 12px;">
+                                    <label style="display: block; margin-bottom: 8px; font-size: 12px; color: #8e8e8e;">만난 날짜</label>
+                                    <input type="date" id="meetingDate" style="width: 100%; padding: 8px; border: 1px solid #dbdbdb; border-radius: 6px; font-size: 14px;">
+                                </div>
                                 <div style="margin-bottom: 8px; font-size: 12px; color: #8e8e8e;">만난 친구들을 선택하세요 (여러명 가능)</div>
                                 <div id="friendCheckboxes" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 120px; overflow-y: auto;">
                                     <!-- 친구 체크박스들이 여기에 생성됩니다 -->
@@ -1866,165 +2126,288 @@
 
         function updateProfilePics() {
             const initials = currentUser.substring(0, 2);
-            document.getElementById('createProfilePic').textContent = initials;
-            document.getElementById('profilePicLarge').textContent = initials;
+            const userProfile = profiles[currentUser] || {};
+            
+            // 프로필 사진이 있으면 사용, 없으면 이니셜
+            if (userProfile.profileImage) {
+                // 메인 프로필 사진들
+                document.getElementById('createProfilePic').style.backgroundImage = `url(${userProfile.profileImage})`;
+                document.getElementById('createProfilePic').style.backgroundSize = 'cover';
+                document.getElementById('createProfilePic').style.backgroundPosition = 'center';
+                document.getElementById('createProfilePic').textContent = '';
+                
+                document.getElementById('profilePicLarge').style.backgroundImage = `url(${userProfile.profileImage})`;
+                document.getElementById('profilePicLarge').style.backgroundSize = 'cover';
+                document.getElementById('profilePicLarge').style.backgroundPosition = 'center';
+                document.getElementById('profilePicLarge').textContent = '';
+                
+                const commentProfilePic = document.getElementById('commentProfilePic');
+                if (commentProfilePic) {
+                    commentProfilePic.style.backgroundImage = `url(${userProfile.profileImage})`;
+                    commentProfilePic.style.backgroundSize = 'cover';
+                    commentProfilePic.style.backgroundPosition = 'center';
+                    commentProfilePic.textContent = '';
+                }
+            } else {
+                // 이니셜 사용
+                document.getElementById('createProfilePic').style.backgroundImage = '';
+                document.getElementById('createProfilePic').textContent = initials;
+                
+                document.getElementById('profilePicLarge').style.backgroundImage = '';
+                document.getElementById('profilePicLarge').textContent = initials;
+                
+                const commentProfilePic = document.getElementById('commentProfilePic');
+                if (commentProfilePic) {
+                    commentProfilePic.style.backgroundImage = '';
+                    commentProfilePic.textContent = initials;
+                }
+            }
+            
             document.getElementById('profileName').textContent = currentUser;
             document.getElementById('editName').value = currentUser;
             
-            const commentProfilePic = document.getElementById('commentProfilePic');
-            if (commentProfilePic) {
-                commentProfilePic.textContent = initials;
-            }
-            
-            const userProfile = profiles[currentUser] || {};
             document.getElementById('profileBio').textContent = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
             document.getElementById('editBio').value = userProfile.bio || '안녕하세요! 가조쿠의 일원입니다 ✨';
         }
 
         function renderStories() {
-            const today = new Date().toDateString();
-            const todayPosts = posts.filter(post => 
-                new Date(post.date).toDateString() === today
-            );
-
-            // 오늘 활동한 사용자들
-            const activeUsers = [...new Set(todayPosts.map(post => post.author))];
-            
-            // 오늘의 인기글 (좋아요 많은 순)
-            const popularToday = todayPosts
-                .filter(post => post.likes.length > 0)
-                .sort((a, b) => b.likes.length - a.likes.length)
-                .slice(0, 3);
-            
-            let storiesHtml = '';
-            
-            // 내 스토리 (항상 첫번째)
-            const myTodayPosts = todayPosts.filter(post => post.author === currentUser);
-            if (myTodayPosts.length > 0 || true) { // 항상 표시
-                const hasMeeting = myTodayPosts.some(post => post.type === 'meeting');
-                const hasDiary = myTodayPosts.some(post => post.type === 'diary');
-                
-                storiesHtml += `
-                    <div class="story-item" onclick="viewMyStory()">
-                        <div class="story-ring ${myTodayPosts.length > 0 ? '' : 'viewed'}">
-                            <div class="story-pic">${currentUser.substring(0, 2)}</div>
-                            ${hasMeeting ? '<div class="story-badge meeting">👥</div>' : ''}
-                            ${hasDiary && !hasMeeting ? '<div class="story-badge diary">📝</div>' : ''}
-                            ${myTodayPosts.length === 0 ? '<div class="story-badge" style="background: #ccc;">+</div>' : ''}
-                        </div>
-                        <div class="story-username">${myTodayPosts.length > 0 ? '내 스토리' : '스토리 추가'}</div>
-                    </div>
-                `;
-            }
-            
-            // 다른 사용자들의 스토리
-            activeUsers.filter(user => user !== currentUser).forEach(user => {
-                const userPosts = todayPosts.filter(post => post.author === user);
-                const hasMeeting = userPosts.some(post => post.type === 'meeting');
-                const hasDiary = userPosts.some(post => post.type === 'diary');
-                
-                storiesHtml += `
-                    <div class="story-item" onclick="viewStory('${user}')">
-                        <div class="story-ring">
-                            <div class="story-pic">${user.substring(0, 2)}</div>
-                            ${hasMeeting ? '<div class="story-badge meeting">👥</div>' : ''}
-                            ${hasDiary && !hasMeeting ? '<div class="story-badge diary">📝</div>' : ''}
-                        </div>
-                        <div class="story-username">${user}</div>
-                    </div>
-                `;
+            // 24시간 이내 스토리만 표시
+            const validStories = stories.filter(story => {
+                const storyDate = new Date(story.date);
+                const now = new Date();
+                const hoursDiff = (now - storyDate) / (1000 * 60 * 60);
+                return hoursDiff < 24;
             });
-            
-            // 오늘의 인기글
-            if (popularToday.length > 0) {
-                storiesHtml += `
-                    <div class="story-item" onclick="viewPopularToday()">
-                        <div class="story-ring" style="background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);">
-                            <div class="story-pic">🔥</div>
-                        </div>
-                        <div class="story-username">오늘의 HOT</div>
+
+            // 사용자별로 스토리 그룹화
+            const storiesByUser = {};
+            validStories.forEach(story => {
+                if (!storiesByUser[story.author]) {
+                    storiesByUser[story.author] = [];
+                }
+                storiesByUser[story.author].push(story);
+            });
+
+            let storiesHtml = '';
+
+            // 내 스토리 (항상 첫번째)
+            const myStories = storiesByUser[currentUser] || [];
+            storiesHtml += `
+                <div class="story-item" onclick="viewUserStories('${currentUser}')">
+                    <div class="story-ring ${myStories.length > 0 ? '' : 'viewed'}">
+                        <div class="story-pic">${currentUser.substring(0, 2)}</div>
+                        ${myStories.length === 0 ? '<div class="story-badge" style="background: #405de6;">+</div>' : ''}
                     </div>
-                `;
-            }
+                    <div class="story-username">${myStories.length > 0 ? '내 스토리' : '스토리 추가'}</div>
+                </div>
+            `;
+
+            // 다른 사용자들의 스토리
+            Object.keys(storiesByUser)
+                .filter(user => user !== currentUser)
+                .forEach(user => {
+                    const userStories = storiesByUser[user];
+                    storiesHtml += `
+                        <div class="story-item" onclick="viewUserStories('${user}')">
+                            <div class="story-ring">
+                                <div class="story-pic">${user.substring(0, 2)}</div>
+                            </div>
+                            <div class="story-username">${user}</div>
+                        </div>
+                    `;
+                });
 
             document.getElementById('storiesContainer').innerHTML = storiesHtml || `
                 <div style="padding: 20px; text-align: center; color: #8e8e8e; width: 100%;">
-                    오늘 첫 번째 게시물을 작성해보세요! ✨
+                    첫 번째 스토리를 올려보세요! 📸
                 </div>
             `;
         }
 
-        function viewMyStory() {
-            const today = new Date().toDateString();
-            const myTodayPosts = posts.filter(post => 
-                post.author === currentUser && new Date(post.date).toDateString() === today
-            );
+        function viewUserStories(userName) {
+            if (userName === currentUser) {
+                const myStories = stories.filter(story => story.author === currentUser);
+                if (myStories.length === 0) {
+                    // 스토리 추가
+                    addStory();
+                    return;
+                }
+            }
+            
+            const userStories = stories.filter(story => story.author === userName);
+            if (userStories.length === 0) return;
+            
+            showStoryViewer(userStories, 0);
+        }
 
-            if (myTodayPosts.length === 0) {
-                switchTab('create');
+        function showStoryViewer(userStories, currentIndex) {
+            if (currentIndex >= userStories.length) return;
+            
+            const story = userStories[currentIndex];
+            const timeAgo = formatTimeAgo(story.date);
+            
+            const content = `
+                <div style="position: relative; background: black; border-radius: 12px; overflow: hidden; max-height: 80vh;">
+                    <div style="position: absolute; top: 16px; left: 16px; right: 16px; z-index: 10; display: flex; align-items: center; gap: 12px;">
+                        <div class="profile-pic" style="width: 32px; height: 32px; font-size: 12px;">${story.author.substring(0, 2)}</div>
+                        <div>
+                            <div style="color: white; font-weight: 600; font-size: 14px;">${story.author}</div>
+                            <div style="color: rgba(255,255,255,0.8); font-size: 12px;">${timeAgo}</div>
+                        </div>
+                        ${story.author === currentUser ? `
+                            <button onclick="deleteStoryConfirm('${story.id}')" style="margin-left: auto; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;">×</button>
+                        ` : ''}
+                    </div>
+                    
+                    ${story.image ? `
+                        <img src="${story.image}" style="width: 100%; height: auto; max-height: 60vh; object-fit: contain;" alt="스토리 이미지">
+                    ` : ''}
+                    
+                    ${story.content ? `
+                        <div style="position: absolute; bottom: 20px; left: 20px; right: 20px; color: white; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; font-size: 16px; line-height: 1.4;">
+                            ${story.content}
+                        </div>
+                    ` : ''}
+                    
+                    ${userStories.length > 1 ? `
+                        <div style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
+                            ${currentIndex > 0 ? `
+                                <button onclick="showStoryViewer(${JSON.stringify(userStories).replace(/"/g, '&quot;')}, ${currentIndex - 1})" style="background: rgba(255,255,255,0.3); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer;">‹</button>
+                            ` : ''}
+                            ${currentIndex < userStories.length - 1 ? `
+                                <button onclick="showStoryViewer(${JSON.stringify(userStories).replace(/"/g, '&quot;')}, ${currentIndex + 1})" style="background: rgba(255,255,255,0.3); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer;">›</button>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('likesModalBody').innerHTML = content;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = `${story.author}님의 스토리`;
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function addStory() {
+            const content = `
+                <div style="text-align: center; padding: 20px;">
+                    <h3 style="margin-bottom: 20px;">스토리 추가</h3>
+                    <div style="margin-bottom: 16px;">
+                        <button onclick="document.getElementById('storyImageInput').click()" style="background: #405de6; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; cursor: pointer; margin-right: 12px;">
+                            📷 사진 추가
+                        </button>
+                        <button onclick="addTextStory()" style="background: #5cb85c; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; cursor: pointer;">
+                            ✏️ 텍스트 스토리
+                        </button>
+                    </div>
+                    <div style="font-size: 12px; color: #8e8e8e;">
+                        스토리는 24시간 후 자동으로 삭제됩니다
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('likesModalBody').innerHTML = content;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = '스토리 추가';
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function addTextStory() {
+            const content = `
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 16px;">텍스트 스토리</h3>
+                    <textarea id="storyText" placeholder="무슨 일이 일어나고 있나요?" style="width: 100%; height: 120px; padding: 12px; border: 1px solid #dbdbdb; border-radius: 8px; font-size: 14px; resize: none; margin-bottom: 16px;"></textarea>
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button onclick="closeLikesModal()" style="background: #8e8e8e; color: white; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">취소</button>
+                        <button onclick="publishTextStory()" style="background: #405de6; color: white; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">게시</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('likesModalBody').innerHTML = content;
+        }
+
+        function publishTextStory() {
+            const text = document.getElementById('storyText').value.trim();
+            if (!text) {
+                alert('내용을 입력해주세요!');
                 return;
             }
 
-            let storyContent = `<h3>🌟 ${currentUser}님의 오늘</h3><br>`;
-            myTodayPosts.forEach(post => {
-                const type = post.type === 'meeting' ? '👥 만남' : '📝 일기';
-                storyContent += `<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">`;
-                storyContent += `<strong>${type}</strong><br>${post.content}<br>`;
-                if (post.partners && post.partners.length > 0) {
-                    storyContent += `<em>@${post.partners.join(', @')}님과 함께</em><br>`;
-                }
-                storyContent += `<small style="color: #8e8e8e;">${formatTimeAgo(post.date)}</small>`;
-                storyContent += `</div>`;
-            });
+            const story = {
+                id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+                author: currentUser,
+                content: text,
+                image: null,
+                date: new Date().toISOString()
+            };
 
-            document.getElementById('likesModalBody').innerHTML = storyContent;
-            document.getElementById('likesModal').querySelector('.modal-title').textContent = '내 오늘 하루';
-            document.getElementById('likesModal').classList.add('active');
+            stories.unshift(story);
+            FirebaseManager.addStory(story);
+            
+            renderStories();
+            closeLikesModal();
+            
+            console.log('✅ 텍스트 스토리가 추가되었습니다!');
         }
 
-        function viewPopularToday() {
-            const today = new Date().toDateString();
-            const popularToday = posts
-                .filter(post => new Date(post.date).toDateString() === today && post.likes.length > 0)
-                .sort((a, b) => b.likes.length - a.likes.length)
-                .slice(0, 5);
+        function previewStoryImage(input) {
+            const file = input.files[0];
+            if (!file) return;
 
-            let content = `<h3>🔥 오늘의 인기글</h3><br>`;
-            popularToday.forEach((post, index) => {
-                content += `<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">`;
-                content += `<div style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">`;
-                content += `<span style="font-weight: bold;">${index + 1}위 - ${post.author}</span>`;
-                content += `<span style="color: #e91e63;">❤️ ${post.likes.length}</span>`;
-                content += `</div>`;
-                content += `<div>${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</div>`;
-                content += `</div>`;
-            });
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                showStoryImagePreview(imageData);
+            };
+            reader.readAsDataURL(file);
+            
+            input.value = '';
+        }
+
+        function showStoryImagePreview(imageData) {
+            const content = `
+                <div style="padding: 20px;">
+                    <h3 style="margin-bottom: 16px;">스토리 미리보기</h3>
+                    <div style="position: relative; background: black; border-radius: 8px; overflow: hidden; margin-bottom: 16px;">
+                        <img src="${imageData}" style="width: 100%; max-height: 300px; object-fit: contain;" alt="스토리 미리보기">
+                    </div>
+                    <textarea id="storyCaption" placeholder="캡션을 추가하세요... (선택사항)" style="width: 100%; height: 80px; padding: 12px; border: 1px solid #dbdbdb; border-radius: 8px; font-size: 14px; resize: none; margin-bottom: 16px;"></textarea>
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button onclick="closeLikesModal()" style="background: #8e8e8e; color: white; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">취소</button>
+                        <button onclick="publishImageStory('${imageData}')" style="background: #405de6; color: white; border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer;">게시</button>
+                    </div>
+                </div>
+            `;
 
             document.getElementById('likesModalBody').innerHTML = content;
-            document.getElementById('likesModal').querySelector('.modal-title').textContent = '오늘의 인기글';
-            document.getElementById('likesModal').classList.add('active');
         }
 
-        function viewStory(userName) {
-            const today = new Date().toDateString();
-            const userTodayPosts = posts.filter(post => 
-                post.author === userName && new Date(post.date).toDateString() === today
-            );
+        function publishImageStory(imageData) {
+            const caption = document.getElementById('storyCaption').value.trim();
 
-            if (userTodayPosts.length === 0) return;
+            const story = {
+                id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+                author: currentUser,
+                content: caption,
+                image: imageData,
+                date: new Date().toISOString()
+            };
 
-            let storyContent = `<h3>${userName}님의 오늘</h3><br>`;
-            userTodayPosts.forEach(post => {
-                const type = post.type === 'meeting' ? '👥 만남' : '📝 일기';
-                storyContent += `<strong>${type}</strong><br>${post.content}<br><br>`;
-                if (post.partner) {
-                    storyContent += `<em>@${post.partner}님과 함께</em><br><br>`;
-                }
-            });
+            stories.unshift(story);
+            FirebaseManager.addStory(story);
+            
+            renderStories();
+            closeLikesModal();
+            
+            console.log('✅ 이미지 스토리가 추가되었습니다!');
+        }
 
-            document.getElementById('likesModalBody').innerHTML = storyContent;
-            document.getElementById('likesModal').querySelector('.modal-title').textContent = '오늘의 스토리';
-            document.getElementById('likesModal').classList.add('active');
+        async function deleteStoryConfirm(storyId) {
+            if (confirm('스토리를 삭제하시겠습니까?')) {
+                await FirebaseManager.deleteStory(storyId);
+                renderStories();
+                closeLikesModal();
+                console.log('✅ 스토리가 삭제되었습니다!');
+            }
         }
 
         function switchTab(tabName) {
@@ -2085,6 +2468,10 @@
             if (type === 'meeting') {
                 meetingSelector.classList.add('active');
                 document.getElementById('postContent').placeholder = '오늘 누구와 만났나요? 어떤 시간을 보내셨나요?';
+                
+                // 오늘 날짜를 기본값으로 설정
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('meetingDate').value = today;
                 
                 // 친구 체크박스 다시 생성 (혹시 누락되었을 경우)
                 setupMeetingFriendCheckboxes();
@@ -2148,9 +2535,33 @@
             if (selectedPostType === 'meeting') {
                 const checkboxes = document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked');
                 const selectedFriends = Array.from(checkboxes).map(cb => cb.value);
+                const meetingDate = document.getElementById('meetingDate').value;
                 
                 if (selectedFriends.length === 0) {
                     alert('만난 친구를 최소 1명 이상 선택해주세요!');
+                    return;
+                }
+                
+                if (!meetingDate) {
+                    alert('만난 날짜를 선택해주세요!');
+                    return;
+                }
+                
+                // 만남 중복 검사
+                const meetingParticipants = [currentUser, ...selectedFriends].sort();
+                const existingMeeting = posts.find(post => {
+                    if (post.type !== 'meeting') return false;
+                    if (!post.meetingDate) return false;
+                    
+                    const postDate = post.meetingDate.split('T')[0]; // YYYY-MM-DD 형식으로 변환
+                    if (postDate !== meetingDate) return false;
+                    
+                    const postParticipants = [post.author, ...(post.partners || [])].sort();
+                    return JSON.stringify(meetingParticipants) === JSON.stringify(postParticipants);
+                });
+                
+                if (existingMeeting) {
+                    alert(`${meetingDate}에 같은 친구들과의 만남이 이미 등록되어 있습니다!\n기존 게시물: "${existingMeeting.content.substring(0, 50)}..."`);
                     return;
                 }
             }
@@ -2166,6 +2577,7 @@
                 partners: selectedPostType === 'meeting' ? 
                     Array.from(document.querySelectorAll('#friendCheckboxes input[type="checkbox"]:checked')).map(cb => cb.value) : 
                     null,
+                meetingDate: selectedPostType === 'meeting' ? document.getElementById('meetingDate').value : null,
                 image: currentImageData,
                 likes: [],
                 date: new Date().toISOString()
@@ -2182,6 +2594,12 @@
             document.getElementById('postContent').value = '';
             document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
             updateSelectedFriends();
+            
+            // 날짜 초기화
+            if (selectedPostType === 'meeting') {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('meetingDate').value = today;
+            }
             
             // 이미지 완전 제거
             currentImageData = null;
@@ -2216,11 +2634,23 @@
         function renderPostFeed() {
             const feed = document.getElementById('postFeed');
             
-            feed.innerHTML = posts.map(post => `
+            feed.innerHTML = posts.map(post => {
+                const authorProfile = profiles[post.author] || {};
+                const authorProfilePic = authorProfile.profileImage ? 
+                    `style="background-image: url(${authorProfile.profileImage}); background-size: cover; background-position: center;"` :
+                    ``;
+                const authorInitials = authorProfile.profileImage ? '' : post.author.substring(0, 2);
+                
+                // 댓글 미리보기 (최대 2개)
+                const postComments = comments[post.id] || [];
+                const previewComments = postComments.slice(0, 2);
+                const remainingComments = postComments.length - 2;
+                
+                return `
                 <div class="post">
                     <div class="post-header">
                         <div class="post-user">
-                            <div class="profile-pic">${post.author.substring(0, 2)}</div>
+                            <div class="profile-pic" ${authorProfilePic}>${authorInitials}</div>
                             <div class="user-info">
                                 <h4>${post.author}</h4>
                                 <div class="post-time">${formatTimeAgo(post.date)}</div>
@@ -2237,12 +2667,11 @@
                     
                     <div class="post-content" style="padding: 12px 16px; order: 1;">
                         <span class="username">${post.author}</span>
-                        ${post.type === 'meeting' && post.partners ? 
-                            `<span style="color: #405de6;">@${post.partners.join(', @')}</span>와 함께 ` : 
-                            post.type === 'meeting' && post.partner ? 
-                            `<span style="color: #405de6;">@${post.partner}</span>와 함께 ` : ''}
                         ${post.content}
                         ${post.type === 'meeting' ? ' 👥' : ' 📝'}
+                        ${post.type === 'meeting' && post.meetingDate ? 
+                            `<div style="font-size: 12px; color: #8e8e8e; margin-top: 4px;">📅 ${formatMeetingDate(post.meetingDate)}</div>` : 
+                            ''}
                     </div>
                     
                     <div class="post-actions" style="order: 2;">
@@ -2251,7 +2680,6 @@
                             ${post.likes.includes(currentUser) ? '❤️' : '🤍'}
                         </button>
                         <button class="action-btn" onclick="openCommentModal('${post.id}')">💬</button>
-                        <button class="action-btn" onclick="sharePost('${post.id}')">📤</button>
                     </div>
                     
                     ${post.likes.length > 0 ? `
@@ -2260,15 +2688,27 @@
                         </div>
                     ` : ''}
                     
-                    ${comments[post.id] && comments[post.id].length > 0 ? `
+                    ${postComments.length > 0 ? `
                         <div style="padding: 0 16px; margin-bottom: 8px; order: 4;">
-                            <span style="color: #8e8e8e; font-size: 14px; cursor: pointer;" onclick="openCommentModal('${post.id}')">
-                                댓글 ${comments[post.id].length}개 모두 보기
-                            </span>
+                            ${remainingComments > 0 ? `
+                                <div style="color: #8e8e8e; font-size: 14px; cursor: pointer; margin-bottom: 8px;" onclick="openCommentModal('${post.id}')">
+                                    댓글 ${postComments.length}개 모두 보기
+                                </div>
+                            ` : ''}
+                            ${previewComments.map(comment => {
+                                const commentAuthorProfile = profiles[comment.author] || {};
+                                return `
+                                    <div style="display: flex; gap: 8px; margin-bottom: 6px; font-size: 14px;">
+                                        <span style="font-weight: 600;">${comment.author}</span>
+                                        <span>${comment.text}</span>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                     ` : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         async function toggleLike(postId) {
@@ -2470,6 +2910,62 @@
                         </div>
                     </div>
                 `;
+            } else if (currentRankingTab === 'gallery') {
+                // 게시글의 사진들과 사진첩 전용 사진들 합치기
+                const postPhotos = posts.filter(post => post.image).map(post => ({
+                    id: post.id,
+                    image: post.image,
+                    author: post.author,
+                    date: post.date,
+                    likes: post.likes,
+                    content: post.content,
+                    type: 'post'
+                }));
+                
+                const allPhotos = [...galleryPhotos.map(photo => ({...photo, type: 'gallery'})), ...postPhotos]
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if (allPhotos.length === 0) {
+                    content = `
+                        <div class="ranking-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="ranking-title">📸 가조쿠 사진첩</div>
+                            <div style="text-align: center; padding: 20px;">
+                                <button onclick="addPhotoToGallery()" style="background: #405de6; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 14px; cursor: pointer; margin-bottom: 16px;">
+                                    📷 사진 추가하기
+                                </button>
+                                <div style="opacity: 0.7;">
+                                    첫 번째 사진을 추가해보세요!
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    content = `
+                        <div class="ranking-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div class="ranking-title">📸 가조쿠 사진첩 (${allPhotos.length}장)</div>
+                                <button onclick="addPhotoToGallery()" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer;">
+                                    + 추가
+                                </button>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 16px;">
+                            ${allPhotos.map(photo => `
+                                <div style="aspect-ratio: 1; position: relative; overflow: hidden; border-radius: 8px; cursor: pointer;" onclick="viewPhoto('${photo.id}', '${photo.type}')">
+                                    <img src="${photo.image}" style="width: 100%; height: 100%; object-fit: cover;" alt="${photo.author}의 사진">
+                                    <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
+                                        ${photo.type === 'gallery' ? '📷' : '📝'} ${photo.likes ? photo.likes.length : 0}
+                                    </div>
+                                    ${photo.author === currentUser ? `
+                                        <div style="position: absolute; top: 4px; right: 4px; background: rgba(255,0,0,0.7); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="event.stopPropagation(); deletePhoto('${photo.id}', '${photo.type}')">
+                                            ×
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
             } else if (currentRankingTab === 'stats') {
                 const totalPosts = posts.length;
                 const totalMeetings = posts.filter(p => p.type === 'meeting').length;
@@ -2503,6 +2999,101 @@
             }
 
             document.getElementById('rankingContent').innerHTML = content;
+        }
+
+        function viewPhoto(photoId, photoType) {
+            let photo;
+            
+            if (photoType === 'gallery') {
+                photo = galleryPhotos.find(p => p.id === photoId);
+            } else {
+                photo = posts.find(p => p.id === photoId);
+            }
+            
+            if (!photo || !photo.image) return;
+
+            const content = `
+                <div style="text-align: center;">
+                    <img src="${photo.image}" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-bottom: 16px;" alt="사진">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; justify-content: center;">
+                        <div class="profile-pic" style="width: 24px; height: 24px; font-size: 10px;">${photo.author.substring(0, 2)}</div>
+                        <span style="font-weight: 600;">${photo.author}</span>
+                        <span style="color: #8e8e8e; font-size: 12px;">${formatTimeAgo(photo.date)}</span>
+                        ${photoType === 'gallery' ? '<span style="background: #405de6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">📷 사진첩</span>' : '<span style="background: #5cb85c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">📝 게시글</span>'}
+                    </div>
+                    ${photo.content ? `
+                        <div style="text-align: left; background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                            ${photo.content}
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; justify-content: center; gap: 16px;">
+                        <span style="color: #e91e63;">❤️ ${photo.likes ? photo.likes.length : 0}</span>
+                        ${photoType === 'post' ? `<span style="color: #8e8e8e;">💬 ${comments[photo.id] ? comments[photo.id].length : 0}</span>` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('likesModalBody').innerHTML = content;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = '사진 상세보기';
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function addPhotoToGallery() {
+            document.getElementById('galleryImageInput').click();
+        }
+
+        function previewGalleryImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                
+                if (confirm('이 사진을 사진첩에 추가하시겠습니까?')) {
+                    const photo = {
+                        id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+                        author: currentUser,
+                        image: imageData,
+                        content: '', // 사진첩은 내용 없음
+                        likes: [],
+                        date: new Date().toISOString()
+                    };
+
+                    // 즉시 로컬에 추가
+                    galleryPhotos.unshift(photo);
+                    
+                    // UI 업데이트
+                    if (currentRankingTab === 'gallery') {
+                        renderRanking();
+                    }
+                    
+                    // Firebase에 저장
+                    FirebaseManager.addGalleryPhoto(photo);
+                    console.log('✅ 사진첩에 사진이 추가되었습니다!');
+                }
+            };
+            reader.readAsDataURL(file);
+            
+            // 입력 초기화
+            input.value = '';
+        }
+
+        async function deletePhoto(photoId, photoType) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            
+            if (photoType === 'gallery') {
+                await FirebaseManager.deleteGalleryPhoto(photoId);
+                console.log('✅ 사진첩 사진이 삭제되었습니다!');
+            } else {
+                await FirebaseManager.deletePost(photoId);
+                console.log('✅ 게시물이 삭제되었습니다!');
+            }
+            
+            // UI 업데이트
+            if (currentRankingTab === 'gallery') {
+                renderRanking();
+            }
         }
 
         function renderProfile() {
@@ -2589,9 +3180,16 @@
 
         function renderComments(postId) {
             const postComments = comments[postId] || [];
-            const commentsHtml = postComments.map(comment => `
+            const commentsHtml = postComments.map(comment => {
+                const commentAuthorProfile = profiles[comment.author] || {};
+                const commentAuthorProfilePic = commentAuthorProfile.profileImage ? 
+                    `style="background-image: url(${commentAuthorProfile.profileImage}); background-size: cover; background-position: center;"` :
+                    ``;
+                const commentAuthorInitials = commentAuthorProfile.profileImage ? '' : comment.author.substring(0, 2);
+                
+                return `
                 <div class="comment-item">
-                    <div class="profile-pic">${comment.author.substring(0, 2)}</div>
+                    <div class="profile-pic" ${commentAuthorProfilePic}>${commentAuthorInitials}</div>
                     <div class="comment-content">
                         <div class="comment-author">${comment.author}</div>
                         <div class="comment-text">${comment.text}</div>
@@ -2601,7 +3199,8 @@
                         <button class="comment-delete" onclick="deleteComment('${postId}', '${comment.id}')">삭제</button>
                     ` : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             document.getElementById('commentsList').innerHTML = postComments.length === 0 ? 
                 '<div style="text-align: center; color: #8e8e8e; padding: 20px;">첫 번째 댓글을 남겨보세요!</div>' : 
@@ -2648,26 +3247,6 @@
         function handleCommentKeyPress(event) {
             if (event.key === 'Enter') {
                 addComment();
-            }
-        }
-
-        function sharePost(postId) {
-            const post = posts.find(p => p.id === postId);
-            if (!post) return;
-            
-            const shareText = `${post.author}님의 게시물을 확인해보세요!\n\n"${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}"`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: '가조쿠 게시물',
-                    text: shareText
-                });
-            } else {
-                navigator.clipboard.writeText(shareText).then(() => {
-                    alert('게시물 내용이 클립보드에 복사되었습니다!');
-                }).catch(() => {
-                    alert('공유하기: ' + shareText);
-                });
             }
         }
 
@@ -2743,23 +3322,47 @@
         }
 
         function openEditProfileModal() {
+            const userProfile = profiles[currentUser] || {};
+            const editProfilePic = document.getElementById('editProfilePic');
+            
+            // 기존 프로필 사진 표시
+            if (userProfile.profileImage) {
+                editProfilePic.style.backgroundImage = `url(${userProfile.profileImage})`;
+                editProfilePic.style.backgroundSize = 'cover';
+                editProfilePic.style.backgroundPosition = 'center';
+                editProfilePic.textContent = '';
+                currentProfileImageData = userProfile.profileImage;
+            } else {
+                editProfilePic.style.backgroundImage = '';
+                editProfilePic.textContent = currentUser.substring(0, 2);
+                currentProfileImageData = null;
+            }
+            
             document.getElementById('editProfileModal').classList.add('active');
         }
 
         function closeEditProfileModal() {
             document.getElementById('editProfileModal').classList.remove('active');
+            // 프로필 사진 입력 초기화
+            document.getElementById('profileImageInput').value = '';
+            currentProfileImageData = null;
         }
 
         async function saveProfile() {
             const bio = document.getElementById('editBio').value.trim();
             
             const profileData = {
-                bio: bio || '안녕하세요! 가조쿠의 일원입니다 ✨'
+                bio: bio || '안녕하세요! 가조쿠의 일원입니다 ✨',
+                profileImage: currentProfileImageData || null
             };
             
             await FirebaseManager.updateProfile(currentUser, profileData);
             
             document.getElementById('profileBio').textContent = profileData.bio;
+            
+            // 프로필 사진 업데이트
+            updateProfilePics();
+            
             closeEditProfileModal();
             
             console.log('✅ 프로필이 업데이트되었습니다!');
@@ -2791,6 +3394,23 @@
                     daysUntil: getDaysUntilBirthday(friend.birthday)
                 }))
                 .sort((a, b) => a.daysUntil - b.daysUntil)[0];
+        }
+
+        function formatMeetingDate(dateString) {
+            const date = new Date(dateString);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return '오늘 만남';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return '어제 만남';
+            } else {
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${month}월 ${day}일 만남`;
+            }
         }
 
         function formatTimeAgo(dateString) {
