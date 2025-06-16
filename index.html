@@ -1518,19 +1518,21 @@
                 }
 
                 try {
+                    // Firebase에 저장할 때는 id 필드 제외
                     const { id, ...storyData } = story;
                     const docRef = await db.collection('stories').add(storyData);
+                    console.log('Firebase 스토리 문서 ID:', docRef.id);
                     
-                    const localStoryIndex = stories.findIndex(s => s.id === story.id);
-                    if (localStoryIndex !== -1) {
-                        stories[localStoryIndex].id = docRef.id;
-                    }
+                    // 로컬 배열에서는 Firebase ID로 업데이트하지 않음
+                    // 실시간 리스너가 자동으로 처리함
                     
                     return true;
                 } catch (error) {
                     console.error('스토리 저장 실패:', error);
+                    // 실패 시에만 로컬에 저장
+                    stories.unshift(story);
                     localStorage.setItem('stories', JSON.stringify(stories));
-                    return true;
+                    throw error; // 에러를 다시 던져서 UI에서 처리할 수 있도록
                 }
             }
 
@@ -1714,6 +1716,8 @@
                 });
 
                 db.collection('stories').onSnapshot((snapshot) => {
+                    console.log('Firebase 스토리 업데이트 감지');
+                    
                     const updatedStories = [];
                     snapshot.docs.forEach(doc => {
                         const data = doc.data();
@@ -1734,8 +1738,14 @@
                     
                     const storiesChanged = JSON.stringify(stories) !== JSON.stringify(updatedStories);
                     if (storiesChanged) {
+                        console.log('스토리 목록 업데이트:', updatedStories.length, '개');
                         stories = updatedStories;
-                        renderStories();
+                        
+                        // UI 업데이트는 debounce 적용
+                        clearTimeout(window.updateStoriesTimeout);
+                        window.updateStoriesTimeout = setTimeout(() => {
+                            renderStories();
+                        }, 100);
                     }
                 });
                 
@@ -2300,10 +2310,22 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const imageData = e.target.result;
                 
-                // 바로 스토리 업로드 (확인 없이)
+                // 로딩 표시 (스토리 컨테이너에)
+                const storiesContainer = document.getElementById('storiesContainer');
+                const originalContent = storiesContainer.innerHTML;
+                storiesContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; width: 100%; padding: 20px; color: #405de6;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
+                            <div style="font-size: 12px;">스토리 업로드 중...</div>
+                        </div>
+                    </div>
+                `;
+                
+                // 바로 스토리 업로드
                 const story = {
                     id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
                     author: currentUser,
@@ -2314,19 +2336,32 @@
 
                 console.log('스토리 생성:', story);
 
-                // 즉시 로컬에 추가
-                stories.unshift(story);
-                console.log('로컬 스토리 배열:', stories);
-                
-                // UI 업데이트
-                renderStories();
-                
-                // Firebase에 저장
-                FirebaseManager.addStory(story).then(() => {
+                try {
+                    // Firebase에 저장 완료까지 대기 (로컬에 즉시 추가하지 않음)
+                    await FirebaseManager.addStory(story);
                     console.log('✅ 스토리가 추가되었습니다!');
-                }).catch(error => {
+                    
+                    // 성공 메시지 잠시 표시
+                    storiesContainer.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; padding: 20px; color: #405de6;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+                                <div style="font-size: 12px;">스토리가 추가되었습니다!</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // 잠시 후 정상 화면으로 복구 (실시간 리스너가 자동으로 UI 업데이트)
+                    setTimeout(() => {
+                        renderStories();
+                    }, 1000);
+                    
+                } catch (error) {
                     console.error('스토리 저장 실패:', error);
-                });
+                    // 실패시 원래 화면 복구
+                    storiesContainer.innerHTML = originalContent;
+                    alert('스토리 업로드에 실패했습니다. 다시 시도해주세요.');
+                }
             };
             reader.readAsDataURL(file);
             
