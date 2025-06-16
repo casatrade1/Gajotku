@@ -935,6 +935,11 @@
 
     <!-- 메인 앱 화면 -->
     <div id="mainApp" class="main-app">
+        <!-- 생일 알림 띠 -->
+        <div class="birthday-banner" id="birthdayBanner">
+            <span id="birthdayMessage">🗓️ 다음 생일 정보를 불러오는 중...</span>
+        </div>
+
         <!-- 헤더 -->
         <div class="header">
             <div class="header-title">가조쿠</div>
@@ -1490,7 +1495,46 @@
             }
         }
 
-        // 왕비호 투표 초기화
+        function checkBirthdays() {
+            const today = new Date();
+            const todayMonth = today.getMonth() + 1;
+            const todayDate = today.getDate();
+            
+            // 오늘이 생일인 친구 찾기
+            const birthdayFriends = friends.filter(friend => {
+                const birthday = new Date(friend.birthday);
+                return birthday.getMonth() + 1 === todayMonth && birthday.getDate() === todayDate;
+            });
+            
+            const banner = document.getElementById('birthdayBanner');
+            const message = document.getElementById('birthdayMessage');
+            
+            if (birthdayFriends.length > 0) {
+                // 오늘이 생일인 경우
+                const names = birthdayFriends.map(f => f.name).join(', ');
+                message.textContent = `🎉 오늘은 ${names}님의 생일입니다! 생일 축하해요! 🎂`;
+                banner.style.display = 'block';
+                banner.style.background = '#e91e63';
+            } else {
+                // 다음 생일까지 며칠 남았는지 표시 (항상 표시)
+                const upcomingBirthdays = friends
+                    .map(friend => ({
+                        ...friend,
+                        daysUntil: getDaysUntilBirthday(friend.birthday)
+                    }))
+                    .sort((a, b) => a.daysUntil - b.daysUntil);
+                
+                const nextBirthday = upcomingBirthdays[0];
+                if (nextBirthday.daysUntil === 0) {
+                    message.textContent = `🎂 ${nextBirthday.name}님 생일 D-DAY!`;
+                    banner.style.background = '#e91e63';
+                } else {
+                    message.textContent = `🗓️ 다음 생일: ${nextBirthday.name}님 (D-${nextBirthday.daysUntil})`;
+                    banner.style.background = '#262626';
+                }
+                banner.style.display = 'block';
+            }
+        }
         async function initializeBihoVotes() {
             const now = new Date();
             const currentMonth = `${now.getFullYear()}-${now.getMonth()}`;
@@ -1511,9 +1555,37 @@
 
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
+            // 새로고침 시 로그인 상태 확인
+            checkLoginStatus();
             renderFriendGrid();
             setupEventListeners();
         });
+
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('currentUser');
+            const lastLoginTime = localStorage.getItem('lastLoginTime');
+            
+            // 로그인한 지 24시간 이내라면 자동 로그인
+            if (savedUser && lastLoginTime) {
+                const timeDiff = Date.now() - parseInt(lastLoginTime);
+                const hoursDiff = timeDiff / (1000 * 60 * 60);
+                
+                if (hoursDiff < 24) {
+                    currentUser = savedUser;
+                    selectedFriend = savedUser;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'block';
+                    
+                    showLoadingMessage();
+                    initializeApp();
+                    return;
+                }
+            }
+            
+            // 자동 로그인 실패시 로그인 화면 표시
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('mainApp').style.display = 'none';
+        }
 
         function renderFriendGrid() {
             const grid = document.getElementById('friendGrid');
@@ -1623,6 +1695,11 @@
             }
             
             currentUser = selectedFriend;
+            
+            // 로그인 상태 저장
+            localStorage.setItem('currentUser', currentUser);
+            localStorage.setItem('lastLoginTime', Date.now().toString());
+            
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             
@@ -1749,6 +1826,7 @@
                 
                 setupSelectOptions();
                 updateProfilePics();
+                checkBirthdays(); // 생일 확인 추가
                 renderStories();
                 renderPostFeed();
                 renderRanking();
@@ -1809,16 +1887,45 @@
                 new Date(post.date).toDateString() === today
             );
 
+            // 오늘 활동한 사용자들
             const activeUsers = [...new Set(todayPosts.map(post => post.author))];
             
-            const storiesHtml = activeUsers.map(user => {
+            // 오늘의 인기글 (좋아요 많은 순)
+            const popularToday = todayPosts
+                .filter(post => post.likes.length > 0)
+                .sort((a, b) => b.likes.length - a.likes.length)
+                .slice(0, 3);
+            
+            let storiesHtml = '';
+            
+            // 내 스토리 (항상 첫번째)
+            const myTodayPosts = todayPosts.filter(post => post.author === currentUser);
+            if (myTodayPosts.length > 0 || true) { // 항상 표시
+                const hasMeeting = myTodayPosts.some(post => post.type === 'meeting');
+                const hasDiary = myTodayPosts.some(post => post.type === 'diary');
+                
+                storiesHtml += `
+                    <div class="story-item" onclick="viewMyStory()">
+                        <div class="story-ring ${myTodayPosts.length > 0 ? '' : 'viewed'}">
+                            <div class="story-pic">${currentUser.substring(0, 2)}</div>
+                            ${hasMeeting ? '<div class="story-badge meeting">👥</div>' : ''}
+                            ${hasDiary && !hasMeeting ? '<div class="story-badge diary">📝</div>' : ''}
+                            ${myTodayPosts.length === 0 ? '<div class="story-badge" style="background: #ccc;">+</div>' : ''}
+                        </div>
+                        <div class="story-username">${myTodayPosts.length > 0 ? '내 스토리' : '스토리 추가'}</div>
+                    </div>
+                `;
+            }
+            
+            // 다른 사용자들의 스토리
+            activeUsers.filter(user => user !== currentUser).forEach(user => {
                 const userPosts = todayPosts.filter(post => post.author === user);
                 const hasMeeting = userPosts.some(post => post.type === 'meeting');
                 const hasDiary = userPosts.some(post => post.type === 'diary');
                 
-                return `
+                storiesHtml += `
                     <div class="story-item" onclick="viewStory('${user}')">
-                        <div class="story-ring ${user === currentUser ? 'viewed' : ''}">
+                        <div class="story-ring">
                             <div class="story-pic">${user.substring(0, 2)}</div>
                             ${hasMeeting ? '<div class="story-badge meeting">👥</div>' : ''}
                             ${hasDiary && !hasMeeting ? '<div class="story-badge diary">📝</div>' : ''}
@@ -1826,9 +1933,76 @@
                         <div class="story-username">${user}</div>
                     </div>
                 `;
-            }).join('');
+            });
+            
+            // 오늘의 인기글
+            if (popularToday.length > 0) {
+                storiesHtml += `
+                    <div class="story-item" onclick="viewPopularToday()">
+                        <div class="story-ring" style="background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="story-pic">🔥</div>
+                        </div>
+                        <div class="story-username">오늘의 HOT</div>
+                    </div>
+                `;
+            }
 
-            document.getElementById('storiesContainer').innerHTML = storiesHtml;
+            document.getElementById('storiesContainer').innerHTML = storiesHtml || `
+                <div style="padding: 20px; text-align: center; color: #8e8e8e; width: 100%;">
+                    오늘 첫 번째 게시물을 작성해보세요! ✨
+                </div>
+            `;
+        }
+
+        function viewMyStory() {
+            const today = new Date().toDateString();
+            const myTodayPosts = posts.filter(post => 
+                post.author === currentUser && new Date(post.date).toDateString() === today
+            );
+
+            if (myTodayPosts.length === 0) {
+                switchTab('create');
+                return;
+            }
+
+            let storyContent = `<h3>🌟 ${currentUser}님의 오늘</h3><br>`;
+            myTodayPosts.forEach(post => {
+                const type = post.type === 'meeting' ? '👥 만남' : '📝 일기';
+                storyContent += `<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">`;
+                storyContent += `<strong>${type}</strong><br>${post.content}<br>`;
+                if (post.partners && post.partners.length > 0) {
+                    storyContent += `<em>@${post.partners.join(', @')}님과 함께</em><br>`;
+                }
+                storyContent += `<small style="color: #8e8e8e;">${formatTimeAgo(post.date)}</small>`;
+                storyContent += `</div>`;
+            });
+
+            document.getElementById('likesModalBody').innerHTML = storyContent;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = '내 오늘 하루';
+            document.getElementById('likesModal').classList.add('active');
+        }
+
+        function viewPopularToday() {
+            const today = new Date().toDateString();
+            const popularToday = posts
+                .filter(post => new Date(post.date).toDateString() === today && post.likes.length > 0)
+                .sort((a, b) => b.likes.length - a.likes.length)
+                .slice(0, 5);
+
+            let content = `<h3>🔥 오늘의 인기글</h3><br>`;
+            popularToday.forEach((post, index) => {
+                content += `<div style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">`;
+                content += `<div style="display: flex; justify-content: between; align-items: center; margin-bottom: 8px;">`;
+                content += `<span style="font-weight: bold;">${index + 1}위 - ${post.author}</span>`;
+                content += `<span style="color: #e91e63;">❤️ ${post.likes.length}</span>`;
+                content += `</div>`;
+                content += `<div>${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}</div>`;
+                content += `</div>`;
+            });
+
+            document.getElementById('likesModalBody').innerHTML = content;
+            document.getElementById('likesModal').querySelector('.modal-title').textContent = '오늘의 인기글';
+            document.getElementById('likesModal').classList.add('active');
         }
 
         function viewStory(userName) {
@@ -2022,6 +2196,9 @@
             document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
             
             console.log('✅ 폼 초기화 완료');
+
+            // 게시글 작성 후 홈 탭으로 이동
+            switchTab('home');
 
             try {
                 // Firebase에 저장
