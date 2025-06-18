@@ -1141,11 +1141,27 @@
         </div>
     </div>
 
+    <!-- 스토리 여러 개 업로드 모달 -->
+    <div id="multiStoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">스토리 업로드</div>
+                <button class="close-btn" onclick="closeMultiStoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="storyPreviewContainer" style="max-height: 60vh; overflow-y: auto;"></div>
+                <div style="margin-top: 16px; text-align: center;">
+                    <button id="uploadAllStoriesBtn" class="save-btn" onclick="uploadAllStories()" style="width: 100%;">모든 스토리 업로드</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 사진첩용 숨김 파일 입력 -->
     <input type="file" id="galleryImageInput" class="hidden-file-input" accept="image/*" onchange="previewGalleryImage(this)">
     
-    <!-- 스토리용 숨김 파일 입력 -->
-    <input type="file" id="storyImageInput" class="hidden-file-input" accept="image/*" onchange="previewStoryImage(this)">
+    <!-- 스토리용 숨김 파일 입력 (여러 개 선택 가능) -->
+    <input type="file" id="storyImageInput" class="hidden-file-input" accept="image/*" multiple onchange="previewMultipleStoryImages(this)">
 
     <script>
         // Firebase 설정
@@ -1212,6 +1228,7 @@
         let currentImageData = null;
         let currentRankingTab = 'meeting';
         let currentPostId = null;
+        let selectedStoryImages = []; // 선택된 스토리 이미지들
 
         // 로컬 캐시
         let posts = [];
@@ -2301,7 +2318,7 @@
         }
 
         function addStory() {
-            // 바로 사진 선택으로 이동
+            // 여러 사진 선택이 가능한 스토리 입력으로 이동
             document.getElementById('storyImageInput').click();
         }
 
@@ -2367,6 +2384,127 @@
             
             // 입력 초기화
             input.value = '';
+        }
+
+        // 여러 스토리 이미지 미리보기 함수
+        function previewMultipleStoryImages(input) {
+            const files = Array.from(input.files);
+            if (!files.length) return;
+
+            selectedStoryImages = [];
+            const previewContainer = document.getElementById('storyPreviewContainer');
+            previewContainer.innerHTML = '';
+
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageData = e.target.result;
+                    selectedStoryImages.push({
+                        id: Date.now() + '_' + index,
+                        file: file,
+                        data: imageData
+                    });
+
+                    // 미리보기 추가
+                    const previewItem = document.createElement('div');
+                    previewItem.style.cssText = 'margin-bottom: 16px; border: 1px solid #dbdbdb; border-radius: 8px; overflow: hidden; position: relative;';
+                    previewItem.innerHTML = `
+                        <img src="${imageData}" style="width: 100%; height: 200px; object-fit: cover;">
+                        <button onclick="removeStoryImage(${index})" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+                        <div style="padding: 8px; font-size: 12px; color: #8e8e8e;">
+                            ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)
+                        </div>
+                    `;
+                    previewContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // 모달 표시
+            document.getElementById('multiStoryModal').classList.add('active');
+            
+            // 입력 초기화
+            input.value = '';
+        }
+
+        // 스토리 이미지 제거
+        function removeStoryImage(index) {
+            selectedStoryImages.splice(index, 1);
+            
+            // 미리보기 다시 렌더링
+            const previewContainer = document.getElementById('storyPreviewContainer');
+            previewContainer.innerHTML = '';
+            
+            selectedStoryImages.forEach((imageObj, newIndex) => {
+                const previewItem = document.createElement('div');
+                previewItem.style.cssText = 'margin-bottom: 16px; border: 1px solid #dbdbdb; border-radius: 8px; overflow: hidden; position: relative;';
+                previewItem.innerHTML = `
+                    <img src="${imageObj.data}" style="width: 100%; height: 200px; object-fit: cover;">
+                    <button onclick="removeStoryImage(${newIndex})" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">×</button>
+                    <div style="padding: 8px; font-size: 12px; color: #8e8e8e;">
+                        ${imageObj.file.name} (${(imageObj.file.size / 1024 / 1024).toFixed(2)}MB)
+                    </div>
+                `;
+                previewContainer.appendChild(previewItem);
+            });
+
+            // 모든 이미지가 제거되면 모달 닫기
+            if (selectedStoryImages.length === 0) {
+                closeMultiStoryModal();
+            }
+        }
+
+        // 모든 스토리 업로드
+        async function uploadAllStories() {
+            if (selectedStoryImages.length === 0) return;
+
+            const uploadBtn = document.getElementById('uploadAllStoriesBtn');
+            const originalText = uploadBtn.textContent;
+            
+            for (let i = 0; i < selectedStoryImages.length; i++) {
+                const imageObj = selectedStoryImages[i];
+                
+                // 진행률 표시
+                uploadBtn.textContent = `업로드 중... (${i + 1}/${selectedStoryImages.length})`;
+                uploadBtn.disabled = true;
+
+                const story = {
+                    id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+                    author: currentUser,
+                    content: '',
+                    image: imageObj.data,
+                    date: new Date().toISOString()
+                };
+
+                try {
+                    await FirebaseManager.addStory(story);
+                    console.log(`✅ 스토리 ${i + 1}/${selectedStoryImages.length} 업로드 완료`);
+                    
+                    // 짧은 지연시간 (너무 빠르게 업로드되지 않도록)
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    console.error(`스토리 ${i + 1} 업로드 실패:`, error);
+                    alert(`스토리 ${i + 1} 업로드에 실패했습니다.`);
+                    break;
+                }
+            }
+
+            // 완료
+            uploadBtn.textContent = '업로드 완료!';
+            uploadBtn.style.background = '#4caf50';
+            
+            setTimeout(() => {
+                closeMultiStoryModal();
+                uploadBtn.textContent = originalText;
+                uploadBtn.disabled = false;
+                uploadBtn.style.background = '#405de6';
+            }, 1500);
+        }
+
+        // 다중 스토리 모달 닫기
+        function closeMultiStoryModal() {
+            document.getElementById('multiStoryModal').classList.remove('active');
+            selectedStoryImages = [];
         }
 
         async function deleteStoryConfirm(storyId) {
@@ -2553,49 +2691,122 @@
 
             console.log('생성된 게시물:', post);
 
-            // 즉시 로컬에 추가 (낙관적 업데이트)
-            posts.unshift(post);
-            renderPostFeed();
-            console.log('로컬 UI 업데이트 완료');
-
-            // 폼 완전 초기화
-            document.getElementById('postContent').value = '';
-            document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
-            updateSelectedFriends();
-            
-            // 날짜 초기화
-            if (selectedPostType === 'meeting') {
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('meetingDate').value = today;
-            }
-            
-            // 이미지 완전 제거
-            currentImageData = null;
-            document.getElementById('imagePreview').innerHTML = '';
-            document.getElementById('imageInput').value = '';
-            
-            // 포스트 타입 초기화
-            selectedPostType = 'diary';
-            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector('[data-type="diary"]').classList.add('active');
-            document.getElementById('meetingSelector').classList.remove('active');
-            document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
-            
-            console.log('✅ 폼 초기화 완료');
-
-            // 게시글 작성 후 홈 탭으로 이동
-            switchTab('home');
-
             try {
-                // Firebase에 저장
-                console.log('Firebase에 저장 시작');
+                // Firebase에 저장 먼저 시도
                 await FirebaseManager.addPost(post);
                 console.log('✅ Firebase 저장 완료');
                 
+                // 성공 시 즉시 로컬에 추가하고 UI 업데이트
+                posts.unshift(post);
+                renderPostFeed();
+                
+                // 성공 메시지 표시
+                postBtn.textContent = '업로드 완료!';
+                postBtn.style.background = '#4caf50';
+                
+                // 폼 완전 초기화
+                setTimeout(() => {
+                    document.getElementById('postContent').value = '';
+                    document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                    updateSelectedFriends();
+                    
+                    // 날짜 초기화
+                    if (selectedPostType === 'meeting') {
+                        const today = new Date().toISOString().split('T')[0];
+                        document.getElementById('meetingDate').value = today;
+                    }
+                    
+                    // 이미지 완전 제거
+                    currentImageData = null;
+                    document.getElementById('imagePreview').innerHTML = '';
+                    document.getElementById('imageInput').value = '';
+                    
+                    // 포스트 타입 초기화
+                    selectedPostType = 'diary';
+                    document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+                    document.querySelector('[data-type="diary"]').classList.add('active');
+                    document.getElementById('meetingSelector').classList.remove('active');
+                    document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
+                    
+                    // 버튼 상태 복원
+                    postBtn.textContent = originalBtnText;
+                    postBtn.disabled = false;
+                    postBtn.style.background = '#405de6';
+                    
+                    console.log('✅ 폼 초기화 완료');
+                    
+                    // 게시글 작성 후 홈 탭으로 이동
+                    switchTab('home');
+                }, 1000);
+                
             } catch (error) {
                 console.error('Firebase 저장 실패:', error);
-                // 실패해도 로컬에는 이미 저장되어 있음
-                alert('게시물 저장에 실패했지만 로컬에는 저장되었습니다.');
+                
+                // 실패시 재시도 옵션 제공
+                postBtn.textContent = '업로드 실패';
+                postBtn.style.background = '#ed4956';
+                
+                const retry = confirm('게시물 업로드에 실패했습니다.\n다시 시도하시겠습니까?');
+                
+                if (retry) {
+                    // 재시도
+                    postBtn.textContent = '재시도 중...';
+                    postBtn.style.background = '#c7c7c7';
+                    
+                    try {
+                        await FirebaseManager.addPost(post);
+                        console.log('✅ 재시도 성공');
+                        
+                        // 성공 시 로컬에 추가
+                        posts.unshift(post);
+                        renderPostFeed();
+                        
+                        postBtn.textContent = '업로드 완료!';
+                        postBtn.style.background = '#4caf50';
+                        
+                        setTimeout(() => {
+                            // 폼 초기화 (위와 동일)
+                            document.getElementById('postContent').value = '';
+                            document.querySelectorAll('#friendCheckboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                            updateSelectedFriends();
+                            
+                            if (selectedPostType === 'meeting') {
+                                const today = new Date().toISOString().split('T')[0];
+                                document.getElementById('meetingDate').value = today;
+                            }
+                            
+                            currentImageData = null;
+                            document.getElementById('imagePreview').innerHTML = '';
+                            document.getElementById('imageInput').value = '';
+                            
+                            selectedPostType = 'diary';
+                            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+                            document.querySelector('[data-type="diary"]').classList.add('active');
+                            document.getElementById('meetingSelector').classList.remove('active');
+                            document.getElementById('postContent').placeholder = '오늘 어떤 하루를 보내셨나요?';
+                            
+                            postBtn.textContent = originalBtnText;
+                            postBtn.disabled = false;
+                            postBtn.style.background = '#405de6';
+                            
+                            switchTab('home');
+                        }, 1000);
+                        
+                    } catch (retryError) {
+                        console.error('재시도도 실패:', retryError);
+                        alert('재시도도 실패했습니다. 나중에 다시 시도해주세요.');
+                        
+                        // 버튼 상태 복원
+                        postBtn.textContent = originalBtnText;
+                        postBtn.disabled = false;
+                        postBtn.style.background = '#405de6';
+                    }
+                } else {
+                    // 재시도 거부시 버튼 상태만 복원
+                    postBtn.textContent = originalBtnText;
+                    postBtn.disabled = false;
+                    postBtn.style.background = '#405de6';
+                }
             }
         }
 
