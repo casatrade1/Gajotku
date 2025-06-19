@@ -2412,8 +2412,14 @@
         });
 
         function addStory() {
-            // 단일 사진 선택 가능한 스토리 입력
-            document.getElementById('imageInput').click();
+            // 별도의 파일 입력 생성해서 사용
+            const storyInput = document.createElement('input');
+            storyInput.type = 'file';
+            storyInput.accept = 'image/*';
+            storyInput.onchange = function(e) {
+                previewStoryImage(e.target);
+            };
+            storyInput.click();
         }
 
         function previewStoryImage(input) {
@@ -2712,26 +2718,17 @@
             const file = input.files[0];
             if (!file) return;
 
-            // 현재 탭 확인
-            const currentTab = document.querySelector('.tab-content.active');
-            
-            if (currentTab && currentTab.id === 'create') {
-                // 게시글 작성용 이미지 미리보기
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentImageData = e.target.result;
-                    document.getElementById('imagePreview').innerHTML = `
-                        <div class="image-preview">
-                            <img src="${currentImageData}" class="preview-img" alt="미리보기">
-                            <button class="remove-img" onclick="removeImage()">&times;</button>
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
-            } else {
-                // 스토리용 이미지 처리
-                previewStoryImage(input);
-            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageData = e.target.result;
+                document.getElementById('imagePreview').innerHTML = `
+                    <div class="image-preview">
+                        <img src="${currentImageData}" class="preview-img" alt="미리보기">
+                        <button class="remove-img" onclick="removeImage()">&times;</button>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
         }
 
         function removeImage() {
