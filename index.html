@@ -2,9 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
     <title>가조쿠 - 친구들만의 SNS</title>
     
     <!-- Firebase SDK -->
@@ -910,6 +911,22 @@
             .bottom-nav {
                 padding-bottom: env(safe-area-inset-bottom);
             }
+            
+            /* iOS에서 터치 최적화 */
+            * {
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+            }
+            
+            input, textarea {
+                -webkit-user-select: text;
+            }
+            
+            /* iOS에서 스크롤 최적화 */
+            .content, .stories-scroll, .modal-content {
+                -webkit-overflow-scrolling: touch;
+            }
         }
 
         /* 숨김 파일 입력 */
@@ -1180,6 +1197,16 @@
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+            
+            // iOS Safari에서 Firebase 연결 문제 해결을 위한 설정
+            if (db) {
+                db.enableNetwork();
+                // iOS에서 오프라인 지원 비활성화 (연결 문제 방지)
+                db.disableNetwork().then(() => {
+                    return db.enableNetwork();
+                });
+            }
+            
             console.log('✅ Firebase 초기화 성공!');
         } catch (error) {
             console.error('❌ Firebase 초기화 실패:', error);
@@ -1843,6 +1870,29 @@
             }
         }
 
+        // iOS 전용 이벤트 리스너 설정
+        function setupEventListeners() {
+            // iOS에서 게시 버튼 터치 이벤트 추가
+            const postBtn = document.querySelector('.post-btn');
+            if (postBtn) {
+                // 터치 이벤트도 함께 처리 (iOS Safari 호환성)
+                postBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    if (!isCreatingPost) {
+                        createPost();
+                    }
+                });
+            }
+            
+            // iOS에서 입력 필드 포커스 문제 해결
+            const textInputs = document.querySelectorAll('input, textarea');
+            textInputs.forEach(input => {
+                input.addEventListener('touchstart', function() {
+                    this.focus();
+                });
+            });
+        }
+
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
             // 새로고침 시 로그인 상태 확인
@@ -2010,7 +2060,12 @@
 
         async function initializeApp() {
             try {
-                await Promise.all([
+                // iOS에서 Firebase 로딩 시간 초과 방지 (10초 timeout)
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('iOS Firebase timeout')), 10000)
+                );
+                
+                const dataPromise = Promise.all([
                     FirebaseManager.getPosts(),
                     FirebaseManager.getComments(),
                     FirebaseManager.getBihoVotes(),
@@ -2018,6 +2073,9 @@
                     FirebaseManager.getGalleryPhotos(),
                     FirebaseManager.getStories()
                 ]);
+                
+                // timeout과 데이터 로딩 중 먼저 완료되는 것을 기다림
+                await Promise.race([dataPromise, timeoutPromise]);
 
                 setupRealtimeListeners();
                 
